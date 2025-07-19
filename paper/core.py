@@ -84,9 +84,9 @@ class PaperMatrix:
 #     A_handle = PaperMatrix(path_A, shape_A, mode='r')
 #     B_handle = PaperMatrix(path_B, shape_A, mode='r')
 #     C_handle = PaperMatrix(path_C, shape_C, mode='r')
-#     A_lazy = LazyMatrix(EagerMatrixOp(A_handle))
-#     B_lazy = LazyMatrix(EagerMatrixOp(B_handle))
-#     C_lazy = LazyMatrix(EagerMatrixOp(C_handle))
+#     A_lazy = LazyMatrix(EagerNodeOp(A_handle))
+#     B_lazy = LazyMatrix(EagerNodeOp(B_handle))
+#     C_lazy = LazyMatrix(EagerNodeOp(C_handle))
 
 #     # 1. Build the plan using the '+' operator
 #     #   This calls our __add__ method.

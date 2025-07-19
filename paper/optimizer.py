@@ -1,12 +1,12 @@
 # --- Purpose: To inspect a plan and choose the best execution strategy. ---
 
 from . import backend
-from .plan import Plan, EagerMatrix, AddOp, MultiplyOp, MultiplyScalarOp
+from .plan import Plan, EagerNode, AddNode, MultiplyNode, MultiplyScalarNode
 # The rule registry
 # Pattern: (OuterOp, InnerOp), Kernel: function_to_execute
 FUSION_RULES = [
-    ((MultiplyScalarOp, AddOp), execute_fused_add_multiply),
-    # Future rules go here, e.g., ((AddOp, MultiplyOp), fused_kernel_2)
+    ((MultiplyScalarNode, AddNode), execute_fused_add_multiply),
+    # Future rules go here, e.g., ((AddNode, MultiplyNode), fused_kernel_2)
 ]
 
 def execute(plan, output_path: str):

@@ -1,21 +1,21 @@
 
 from . import optimizer
 
-class EagerMatrixOp:
+class EagerNodeOp:
     """An operation that represents an already computed matrix on disk. This is the leaf of our plan."""
     def __init__(self, matrix: PaperMatrix):
         self.matrix = matrix
         self.shape = matrix.shape
 
     def __repr__(self):
-        return f"EagerMatrixOp(path='{self.matrix.filepath})"
+        return f"EagerNodeOp(path='{self.matrix.filepath})"
     
     def execute(self, path):
         """Executing a leaf node simply means returning the handle to the existing matrix."""
-        print(f" - Executing EagerMatrixOp: Providing handle to '{self.matrix.filepath}")
+        print(f" - Executing EagerNodeOp: Providing handle to '{self.matrix.filepath}")
         return self.matrix
 
-class AddOp:
+class AddNode:
     """An operation node representing addition in our computation plan."""
     def __init__(self, left: 'LazyMatrix', right: 'LazyMatrix'):
         if left.shape != right.shape:
@@ -26,18 +26,18 @@ class AddOp:
     
     def __repr__(self):
         # !r calls the repr() of the inner objects, creating a nested view
-        return f"AddOp(left={self.left!r}, right={self.right!r})"
+        return f"AddNode(left={self.left!r}, right={self.right!r})"
 
     def execute(self, output_path):
         """Executes the addition plan."""
-        print(" - Execute AddOp: Get inputs...")
+        print(" - Execute AddNode: Get inputs...")
         matrix_A = self.left.op.execute(None)
         matrix_B = self.right.op.execute(None)
 
         print(" - Calling 'add' to perform the computation...")
         return add(matrix_A, matrix_B, output_path)
 
-class MultiplyOp:
+class MultiplyNode:
     """An operation node representing addition in our computation plan."""
     def __init__(self, left: 'LazyMatrix', right: 'LazyMatrix'):
         if left.shape[1] != right.shape[0]:
@@ -48,18 +48,18 @@ class MultiplyOp:
     
     def __repr__(self):
         # !r calls the repr() of the inner objects, creating a nested view
-        return f"AddOp(left={self.left!r}, right={self.right!r})"
+        return f"AddNode(left={self.left!r}, right={self.right!r})"
 
     def execute(self, output_path):
         """Executes the addition plan."""
-        print(" - Execute AddOp: Get inputs...")
+        print(" - Execute AddNode: Get inputs...")
         matrix_A = self.left.op.execute(None)
         matrix_B = self.right.op.execute(None)
 
         print(" - Calling 'add' to perform the computation...")
         return add(matrix_A, matrix_B, output_path)
 
-class MultiplyScalarOp:
+class MultiplyScalarNode:
     """An operation node representing multiplication by a scalar."""
     def __init__(self, left: 'LazyMatrix', right: float):
         self.left = left
@@ -67,13 +67,13 @@ class MultiplyScalarOp:
         self.shape = left.shape
     
     def __repr__(self):
-        return f"MultiplyScalarOp(left={self.left!r}, scalar={self.right})"
+        return f"MultiplyScalarNode(left={self.left!r}, scalar={self.right})"
 
     def execute(self, output_path):
         """This is our 'mini-optimizer'. It checks if it can use a fast, fused kernel."""
         # THE OPTIMIZATION RULE:
         # If my left input is an addition operation...
-        if isinstance(self.left.op, AddOp):
+        if isinstance(self.left.op, AddNode):
             print("Optimizer: Fused Add-Multiply pattern detected! Calling fast kernel.")
             # ...then call the special fused execution function
             add_op = self.left.op
@@ -109,16 +109,16 @@ class LazyMatrix:
         return f"LazyMatrix(plan={self.op!r})"
 
     def __add__(self, x: 'LazyMatrix'):
-        print("Build an 'AddOp' plan...")
-        return LazyMatrix(AddOp(self, x))
+        print("Build an 'AddNode' plan...")
+        return LazyMatrix(AddNode(self, x))
     
     def __matmul__(self, x: 'LazyMatrix'):
-        print("Build an 'MultiplyOp' plan")
-        return LazyMatrix(MultiplyOp(self, x))
+        print("Build an 'MultiplyNode' plan")
+        return LazyMatrix(MultiplyNode(self, x))
 
     def __mul__(self, x):
         if isinstance(x, (int, float)):
-            return LazyMatrix(MultiplyScalarOp(self, x))
+            return LazyMatrix(MultiplyScalarNode(self, x))
         raise NotImplementedError("Only scalar multiplication is supported.")
     
     def __rmul__(self, x):
