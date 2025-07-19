@@ -79,6 +79,45 @@ def add_eager(A: MiniMatrix, B: MiniMatrix):
     print("Addition complete.")
     return C
 
+def multiply_eager(A: MiniMatrix, B: MiniMatrix):
+    """Performs out-of-core tiled matrix multiplication: C = A @ B."""
+    if A.shape[1] != B.shape[0]:
+        raise ValueError("Inner dimensions must match for multiplication.")
+    
+    C_shape = (A.shape[0], B.shape[1])
+    C_path = os.path.join(DATA_DIR, "C_mul.bin")
+    C = MiniMatrix(C_path, C_shape, mode='w+')
+
+    print("Performing eager multiplication...")
+    rows_A, K, cols_B = A.shape[0], A.shape[1], B.shape[1]
+
+    # Loop over the tiles of the output matrix C
+    for r_start in range(0, rows_A, TILE_SIZE):
+        r_end = min(r_start + TILE_SIZE, rows_A)
+        for c_start in range(0, cols_B, TILE_SIZE):
+            c_end = min(c_start + TILE_SIZE, cols_B)
+
+            # 1. Initialize an in-memory tile for accumulating the result
+            tile_C = np.zeros((r_end - r_start, c_end - c_start), dtype=C.dtype)
+
+            # 2. Loop through the inner dimension k
+            for k_start in range(0, K, TILE_SIZE):
+                k_end = min(k_start + TILE_SIZE, K)
+
+                # load the corresponding tiles from A and B
+                tile_A = A.data[r_start:r_end, k_start:k_end]
+                tile_B = B.data[k_start:k_end, c_start:c_end]
+
+                #3. Perform in-memory multiplication and accumulate
+                tile_C += tile_A @ tile_B
+            
+            # 4. write the final computed tile to disk
+            C.data[r_start:r_end, c_start:c_end] = tile_C
+        
+        C.data.flush()
+        print("Multiplication complete.")
+        return C
+
 # --- Main Execution Block ---
 if __name__ == "__main__":
     # Create the data directory if it doesn't exist
@@ -112,3 +151,18 @@ if __name__ == "__main__":
     C_add = add_eager(A, B_add)
     end_time = time.time()
     print(f"Eager Addition finished in {end_time - start_time:.2f} seconds. Result: {C_add}")
+
+    # --- Setup Matrix B for Multiplcation ---
+    shape_B_mul = (4200, 3800)
+    path_B_mul = os.path.join(DATA_DIR, "B_add.bin")
+    if not os.path.exists(path_B_mul):
+        create_random_matrix(path_B_mul, shape_B_mul)
+    B_mul = MiniMatrix(path_B_mul, shape_B_mul)
+    print(f"Loaded matrix representation: {B_mul}")
+
+    # --- Perform Eager Addition ---
+    print("\n--- Starting Eager Multiplication ---")
+    start_time = time.time()
+    C_mul = add_eager(A, B_mul)
+    end_time = time.time()
+    print(f"Eager Multiplication finished in {end_time - start_time:.2f} seconds. Result: {C_mul}")
