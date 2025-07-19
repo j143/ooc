@@ -41,6 +41,22 @@ class EagerMatrixOp:
         self.matrix = matrix
         self.shape = matrix.shape
 
+    def __repr__(self):
+        return f"EagerMatrixOp(path='{self.matrix.filepath})"
+
+class AddOp:
+    """An operation node representing addition in our computation plan."""
+    def __init__(self, left: 'LazyMatrix', right: 'LazyMatrix'):
+        if left.shape != right.shape:
+            raise ValueError("Shapes must match for lazy addition.")
+        self.left = left
+        self.right = right
+        self.shape = left.shape
+    
+    def __repr__(self):
+        # !r calls the repr() of the inner objects, creating a nested view
+        return f"AddOp(left={self.left!r}, right={self.right!r})"
+
 class LazyMatrix:
     """Represents a computation that will result in a matrix, but is not yet executed."""
     def __init__(self, op):
@@ -49,7 +65,11 @@ class LazyMatrix:
         self.shape = op.shape
     
     def __repr__(self):
-        return f"LazyMatrix(op={type(self.op).__name__}, shape={self.shape})"
+        return f"LazyMatrix(plan={self.op!r})"
+
+    def __add__(self, x: 'LazyMatrix'):
+        print("Build an 'AddOp' plan...")
+        return LazyMatrix(AddOp(self, x))
 
 def create_random_matrix(filepath, shape):
     """Creates and saves a large matrix with random data, tile by tile."""
@@ -144,7 +164,7 @@ def multiply_eager(A: MiniMatrix, B: MiniMatrix):
         print("Multiplication complete.")
         return C
 
-# --- Main Execution Block ---
+
 def main():
     # Create the data directory if it doesn't exist
     if not os.path.exists(DATA_DIR):
@@ -153,31 +173,39 @@ def main():
     # Define the shape of our first test matrix
     shape_A = (3500, 4200)
     path_A = os.path.join(DATA_DIR, "A.bin")
+    path_B = os.path.join(DATA_DIR, "B_add.bin")
 
     # Create the matrix file if it doesn't already exist
-    if not os.path.exists(path_A):
-        print(f"Creating matrix at '{path_A}'...")
-        writer = MiniMatrix(path_A, shape_A, mode='w+')
-        writer.close()
-        print("Matrix creation complete.")
+    for path, shape in {path_A: shape_A, path_B: shape_A}.items():
+        if not os.path.exists(path_A):
+            writer = MiniMatrix(path_A, shape_A, mode='w+')
+            writer.close()
     
     # lazy execution logic
     print("\n--- Wrapping Eager matrix in Lazy container ---")
 
     # 1. Open a handle to the physical on-disk matrix
     A_handle = MiniMatrix(path_A, shape_A, mode='r')
+    B_handle = MiniMatrix(path_B, shape_A, mode='r')
     print(f"Opened eager matrix: {A_handle}")
 
     # 2. Wrap the eager matrix in our lazy engine's "leaf" operation
-    leaf_op = EagerMatrixOp(A_handle)
+    # & create the main LazyMatrix object to hold this plan
+    A_lazy = LazyMatrix(EagerMatrixOp(A_handle))
+    B_lazy = LazyMatrix(EagerMatrixOp(B_handle))
+    print(f"Created a lazy wrapper for the matrix: {A_lazy!r} \n {B_lazy!r}")
 
-    # 3. Create the main LazyMatrix object to hold this plan
-    A_lazy = LazyMatrix(leaf_op)
-    print(f"Created a lazy wrapper for the matrix: {A_lazy}")
+    # 3. Build the plan using the '+' operator
+    #   This calls our __add__ method.
+    plan = A_lazy + B_lazy
 
-    # 4. Clean up the file handle
+    print("\n plan built successfully. Plan object:")
+    print(plan)
+
+    # 5. Clean up the file handle
     A_handle.close()
-    
+    B_handle.close()
+
     
     # # Instantiate our matrix object
     # A = MiniMatrix(path_A, shape_A)
