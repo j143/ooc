@@ -22,7 +22,16 @@ class MiniMatrix:
         # Memory-mapped files are used for accessing small segments of large files on disk,
         # without reading the entire file into memory. NumPy’s memmap’s are array-like objects.
         self.data = np.memmap(self.filepath, dtype=self.dtype, mode=mode, shape=self.shape)
-
+        
+    def close(self):
+        """Explicitly closes the underlying memory-mapped file handle."""
+        
+        if self.data is not None and self.data._mmap is not None:
+            print("I reached mmap")
+            print(self.data._mmap)
+            self.data._mmap.close()
+            print(self.data._mmap)
+    
     def __repr__(self):
         return f"MiniMatrix(path='{self.filepath}', shape={self.shape}, dtype={self.dtype.name})"
 
@@ -46,7 +55,8 @@ def create_random_matrix(filepath, shape):
             
     matrix.data.flush() # Ensure all changes are written to disk
     print("Creation complete.")
-    return matrix
+    matrix.close()
+    
 
 def add_eager(A: MiniMatrix, B: MiniMatrix):
     """Performs out-of-core matrix addition: C = A + B."""
@@ -149,6 +159,8 @@ if __name__ == "__main__":
     print("\n--- Starting Eager Addition ---")
     start_time = time.time()
     C_add = add_eager(A, B_add)
+    A.close()
+    C_add.close()
     end_time = time.time()
     print(f"Eager Addition finished in {end_time - start_time:.2f} seconds. Result: {C_add}")
 
@@ -163,6 +175,7 @@ if __name__ == "__main__":
     # --- Perform Eager Addition ---
     print("\n--- Starting Eager Multiplication ---")
     start_time = time.time()
-    C_mul = add_eager(A, B_mul)
+    C_mul = multiply_eager(A, B_mul)
+    C_mul.close()
     end_time = time.time()
     print(f"Eager Multiplication finished in {end_time - start_time:.2f} seconds. Result: {C_mul}")
