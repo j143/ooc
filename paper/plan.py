@@ -41,11 +41,11 @@ class EagerNode:
         self.shape = matrix.shape
 
     def __repr__(self):
-        return f"EagerNodeOp(path='{self.matrix.filepath})"
+        return f"EagerNode(path='{self.matrix.filepath})"
     
     def execute(self, path):
         """Executing a leaf node simply means returning the handle to the existing matrix."""
-        print(f" - Executing EagerNodeOp: Providing handle to '{self.matrix.filepath}")
+        print(f" - Executing EagerNode: Providing handle to '{self.matrix.filepath}")
         return self.matrix
 
 class AddNode:
@@ -90,7 +90,7 @@ class MultiplyNode:
         matrix_B = self.right.op.execute(None)
 
         print(" - Calling 'add' to perform the computation...")
-        return add(matrix_A, matrix_B, output_path)
+        return multiply(matrix_A, matrix_B, output_path)
 
 class MultiplyScalarNode:
     """An operation node representing multiplication by a scalar."""

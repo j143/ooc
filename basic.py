@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import time
 from paper import PaperMatrix, Plan, EagerNode
 
 # --- Configuration ---
@@ -52,9 +53,9 @@ def main():
     A_handle = PaperMatrix(path_A, shape_A, mode='r')
     B_handle = PaperMatrix(path_B, shape_A, mode='r')
     C_handle = PaperMatrix(path_C, shape_C, mode='r')
-    A_lazy = Plan(EagerNodeOp(A_handle))
-    B_lazy = Plan(EagerNodeOp(B_handle))
-    C_lazy = Plan(EagerNodeOp(C_handle))
+    A_lazy = Plan(EagerNode(A_handle))
+    B_lazy = Plan(EagerNode(B_handle))
+    C_lazy = Plan(EagerNode(C_handle))
 
     # 1. Build the plan using the '+' operator
     #   This calls our __add__ method.
