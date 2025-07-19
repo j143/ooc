@@ -2,8 +2,9 @@ import numpy as np
 import os
 from paper import PaperMatrix, Plan, EagerNode
 
-DATA_DIR = "data"
-
+# --- Configuration ---
+TILE_SIZE = 1000  # The dimension of the square tiles to process in memory
+DATA_DIR = "data" # Directory to store large matrix files
 
 def create_random_matrix(filepath, shape):
     """Creates and saves a large matrix with random data, tile by tile."""
@@ -51,9 +52,9 @@ def main():
     A_handle = PaperMatrix(path_A, shape_A, mode='r')
     B_handle = PaperMatrix(path_B, shape_A, mode='r')
     C_handle = PaperMatrix(path_C, shape_C, mode='r')
-    A_lazy = LazyMatrix(EagerNodeOp(A_handle))
-    B_lazy = LazyMatrix(EagerNodeOp(B_handle))
-    C_lazy = LazyMatrix(EagerNodeOp(C_handle))
+    A_lazy = Plan(EagerNodeOp(A_handle))
+    B_lazy = Plan(EagerNodeOp(B_handle))
+    C_lazy = Plan(EagerNodeOp(C_handle))
 
     # 1. Build the plan using the '+' operator
     #   This calls our __add__ method.

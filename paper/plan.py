@@ -1,7 +1,40 @@
 
 from . import optimizer
 
-class EagerNodeOp:
+class Plan:
+    """Represents a computation that will result in a matrix, but is not yet executed."""
+    def __init__(self, op):
+        # The 'op' is the plan for this matrix
+        self.op = op
+        self.shape = op.shape
+    
+    def compute(self, output_path):
+        """Triggers the execution of the entire computation plan."""
+        result_matrix = self.op.execute(output_path)
+        return result_matrix
+
+    def __repr__(self):
+        return f"Plan(plan={self.op!r})"
+
+    def __add__(self, x: 'Plan'):
+        print("Build an 'AddNode' plan...")
+        return Plan(AddNode(self, x))
+    
+    def __matmul__(self, x: 'Plan'):
+        print("Build an 'MultiplyNode' plan")
+        return Plan(MultiplyNode(self, x))
+
+    def __mul__(self, x):
+        if isinstance(x, (int, float)):
+            return Plan(MultiplyScalarNode(self, x))
+        raise NotImplementedError("Only scalar multiplication is supported.")
+    
+    def __rmul__(self, x):
+        # Handles the case `2 * my_lazy_matrix`
+        return self.__mul__(x)
+
+
+class EagerNode:
     """An operation that represents an already computed matrix on disk. This is the leaf of our plan."""
     def __init__(self, matrix: PaperMatrix):
         self.matrix = matrix
@@ -17,7 +50,7 @@ class EagerNodeOp:
 
 class AddNode:
     """An operation node representing addition in our computation plan."""
-    def __init__(self, left: 'LazyMatrix', right: 'LazyMatrix'):
+    def __init__(self, left: 'Plan', right: 'Plan'):
         if left.shape != right.shape:
             raise ValueError("Shapes must match for lazy addition.")
         self.left = left
@@ -39,7 +72,7 @@ class AddNode:
 
 class MultiplyNode:
     """An operation node representing addition in our computation plan."""
-    def __init__(self, left: 'LazyMatrix', right: 'LazyMatrix'):
+    def __init__(self, left: 'Plan', right: 'Plan'):
         if left.shape[1] != right.shape[0]:
             raise ValueError("Shapes must match for lazy addition.")
         self.left = left
@@ -61,7 +94,7 @@ class MultiplyNode:
 
 class MultiplyScalarNode:
     """An operation node representing multiplication by a scalar."""
-    def __init__(self, left: 'LazyMatrix', right: float):
+    def __init__(self, left: 'Plan', right: float):
         self.left = left
         self.right = right
         self.shape = left.shape
@@ -98,34 +131,3 @@ class MultiplyScalarNode:
             TMP.close()
             return C
 
-class LazyMatrix:
-    """Represents a computation that will result in a matrix, but is not yet executed."""
-    def __init__(self, op):
-        # The 'op' is the plan for this matrix
-        self.op = op
-        self.shape = op.shape
-    
-    def __repr__(self):
-        return f"LazyMatrix(plan={self.op!r})"
-
-    def __add__(self, x: 'LazyMatrix'):
-        print("Build an 'AddNode' plan...")
-        return LazyMatrix(AddNode(self, x))
-    
-    def __matmul__(self, x: 'LazyMatrix'):
-        print("Build an 'MultiplyNode' plan")
-        return LazyMatrix(MultiplyNode(self, x))
-
-    def __mul__(self, x):
-        if isinstance(x, (int, float)):
-            return LazyMatrix(MultiplyScalarNode(self, x))
-        raise NotImplementedError("Only scalar multiplication is supported.")
-    
-    def __rmul__(self, x):
-        # Handles the case `2 * my_lazy_matrix`
-        return self.__mul__(x)
-
-    def compute(self, output_path):
-        """Triggers the execution of the entire computation plan."""
-        result_matrix = self.op.execute(output_path)
-        return result_matrix
