@@ -225,48 +225,6 @@ def main():
     B_handle.close()
     result_matrix.close()
 
-    
-    # # Instantiate our matrix object
-    # A = MiniMatrix(path_A, shape_A)
-    # print(f"Successfully loaded matrix representation: {A}")
-
-    # # --- Setup Matrix B for Addition ---
-    # # It must have the same shape as A
-    # shape_B_add = (3500, 4200)
-    # path_B_add = os.path.join(DATA_DIR, "B_add.bin")
-    # if not os.path.exists(path_B_add):
-    #     create_random_matrix(path_B_add, shape_B_add)
-    # B_add = MiniMatrix(path_B_add, shape_B_add)
-    # print(f"Loaded matrix representation: {B_add}")
-    
-    # # --- Perform Eager Addition ---
-    # print("\n--- Starting Eager Addition ---")
-    # start_time = time.time()
-    # C_add = add_eager(A, B_add)
-    # A.close()
-    # B_add.close()
-    # C_add.close()
-    # end_time = time.time()
-    # print(f"Eager Addition finished in {end_time - start_time:.2f} seconds. Result: {C_add}")
-
-    # # --- Setup Matrix B for Multiplcation ---
-    # shape_B_mul = (4200, 3800)
-    # path_B_mul = os.path.join(DATA_DIR, "B_mul.bin")
-    # if not os.path.exists(path_B_mul):
-    #     create_random_matrix(path_B_mul, shape_B_mul)
-    # B_mul = MiniMatrix(path_B_mul, shape_B_mul)
-    # print(f"Loaded matrix representation: {B_mul}")
-
-    # # --- Perform Eager Addition ---
-    # print("\n--- Starting Eager Multiplication ---")
-    # start_time = time.time()
-    # C_mul = multiply_eager(A, B_mul)
-    # A.close()
-    # B_mul.close()
-    # C_mul.close()
-    # end_time = time.time()
-    # print(f"Eager Multiplication finished in {end_time - start_time:.2f} seconds. Result: {C_mul}")
-
 
 if __name__ == "__main__":
     main()
