@@ -44,3 +44,16 @@ The architecture is inspired by modern data systems and academic research (e.g.,
 +-----------------------------------------------------------------+
 
 ```
+
+### Testing
+
+```bash
+# Run all tests
+python ./tests/run_tests.py
+
+# Run a specific test
+python ./tests/run_tests.py addition
+python ./tests/run_tests.py fused
+python ./tests/run_tests.py scalar
+```
+
