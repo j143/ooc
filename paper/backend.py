@@ -99,3 +99,113 @@ def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, ou
     
     C.data.flush()
     return C
+
+def execute_fused_matmul_scalar(A: PaperMatrix, B: PaperMatrix, scalar: float, output_path: str) -> PaperMatrix:
+    """
+    Performs the fused (A @ B) * scalar operation in a single pass
+    without creating a temporary matrix for (A @ B).
+    """
+    if A.shape[1] != B.shape[0]:
+        raise ValueError("Inner dimensions must match for multiplication.")
+    
+    C_shape = (A.shape[0], B.shape[1])
+    C = PaperMatrix(output_path, C_shape, mode='w+')
+    
+    rows_A, K, cols_B = A.shape[0], A.shape[1], B.shape[1]
+    
+    # Loop over the tiles of the output matrix C
+    for r_start in range(0, rows_A, TILE_SIZE):
+        r_end = min(r_start + TILE_SIZE, rows_A)
+        for c_start in range(0, cols_B, TILE_SIZE):
+            c_end = min(c_start + TILE_SIZE, cols_B)
+            
+            # Initialize an in-memory tile for accumulating the result
+            tile_C = np.zeros((r_end - r_start, c_end - c_start), dtype=C.dtype)
+            
+            # Loop through the inner dimension k
+            for k_start in range(0, K, TILE_SIZE):
+                k_end = min(k_start + TILE_SIZE, K)
+                
+                # Load the corresponding tiles from A and B
+                tile_A = A.data[r_start:r_end, k_start:k_end]
+                tile_B = B.data[k_start:k_end, c_start:c_end]
+                
+                # Perform in-memory multiplication and accumulate
+                tile_C += tile_A @ tile_B
+            
+            # Apply scalar multiplication directly and write to disk
+            C.data[r_start:r_end, c_start:c_end] = tile_C * scalar
+    
+    C.data.flush()
+    return C
+
+def execute_fused_add_matmul(A: PaperMatrix, B: PaperMatrix, C: PaperMatrix, output_path: str) -> PaperMatrix:
+    """
+    Performs the fused (A + B) @ C operation in a single pass
+    without creating a temporary matrix for (A + B).
+    """
+    if A.shape != B.shape:
+        raise ValueError("Matrices A and B must have the same shape for addition.")
+    if A.shape[1] != C.shape[0]:
+        raise ValueError("Inner dimensions must match for multiplication.")
+    
+    result_shape = (A.shape[0], C.shape[1])
+    result = PaperMatrix(output_path, result_shape, mode='w+')
+    
+    rows_A, K, cols_C = A.shape[0], A.shape[1], C.shape[1]
+    
+    # Loop over the tiles of the output matrix
+    for r_start in range(0, rows_A, TILE_SIZE):
+        r_end = min(r_start + TILE_SIZE, rows_A)
+        for c_start in range(0, cols_C, TILE_SIZE):
+            c_end = min(c_start + TILE_SIZE, cols_C)
+            
+            # Initialize an in-memory tile for accumulating the result
+            result_tile = np.zeros((r_end - r_start, c_end - c_start), dtype=result.dtype)
+            
+            # Loop through the inner dimension k
+            for k_start in range(0, K, TILE_SIZE):
+                k_end = min(k_start + TILE_SIZE, K)
+                
+                # Load the corresponding tiles from A and B
+                tile_A = A.data[r_start:r_end, k_start:k_end]
+                tile_B = B.data[r_start:r_end, k_start:k_end]
+                tile_C = C.data[k_start:k_end, c_start:c_end]
+                
+                # Perform fused operation: (A + B) @ C for this tile
+                sum_tile = tile_A + tile_B
+                result_tile += sum_tile @ tile_C
+            
+            # Write the final computed tile to disk
+            result.data[r_start:r_end, c_start:c_end] = result_tile
+    
+    result.data.flush()
+    return result
+
+def execute_fused_double_scalar(A: PaperMatrix, scalar1: float, scalar2: float, output_path: str) -> PaperMatrix:
+    """
+    Performs the fused (A * scalar1) * scalar2 operation in a single pass,
+    optimizing by directly multiplying A by (scalar1 * scalar2).
+    """
+    C = PaperMatrix(output_path, A.shape, mode='w+')
+    
+    # Pre-compute the combined scalar
+    combined_scalar = scalar1 * scalar2
+    
+    rows, cols = A.shape
+    for r_start in range(0, rows, TILE_SIZE):
+        r_end = min(r_start + TILE_SIZE, rows)
+        for c_start in range(0, cols, TILE_SIZE):
+            c_end = min(c_start + TILE_SIZE, cols)
+            
+            # Read input tile
+            tile_A = A.data[r_start:r_end, c_start:c_end]
+            
+            # Apply combined scalar multiplication
+            result_tile = tile_A * combined_scalar
+            
+            # Write the result
+            C.data[r_start:r_end, c_start:c_end] = result_tile
+    
+    C.data.flush()
+    return C

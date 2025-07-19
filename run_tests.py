@@ -9,6 +9,7 @@ Available tests:
     - addition: Tests matrix addition (A + B)
     - fused: Tests fused operation ((A + B) * 2)
     - scalar: Tests scalar multiplication (A * 2)
+    - optimizer: Tests all optimizer fusion patterns
     - all: Runs all tests (default)
 """
 
@@ -20,6 +21,7 @@ from tests.test_matrix_operations import (
     test_scalar_multiply,
     run_all_tests
 )
+from tests.test_optimizer_patterns import run_all_optimizer_tests
 
 def print_usage():
     print(__doc__)
@@ -35,11 +37,15 @@ if __name__ == "__main__":
             test_fused_add_multiply()
         elif test_name == "scalar":
             test_scalar_multiply()
+        elif test_name == "optimizer":
+            run_all_optimizer_tests()
         elif test_name == "all":
             run_all_tests()
+            run_all_optimizer_tests()
         else:
             print(f"Unknown test: {test_name}")
             print_usage()
     else:
         # Default: run all tests
         run_all_tests()
+        run_all_optimizer_tests()
