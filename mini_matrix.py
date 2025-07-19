@@ -35,6 +35,22 @@ class MiniMatrix:
     def __repr__(self):
         return f"MiniMatrix(path='{self.filepath}', shape={self.shape}, dtype={self.dtype.name})"
 
+class EagerMatrixOp:
+    """An operation that represents an already computed matrix on disk. This is the leaf of our plan."""
+    def __init__(self, matrix: MiniMatrix):
+        self.matrix = matrix
+        self.shape = matrix.shape
+
+class LazyMatrix:
+    """Represents a computation that will result in a matrix, but is not yet executed."""
+    def __init__(self, op):
+        # The 'op' is the plan for this matrix
+        self.op = op
+        self.shape = op.shape
+    
+    def __repr__(self):
+        return f"LazyMatrix(op={type(self.op).__name__}, shape={self.shape})"
+
 def create_random_matrix(filepath, shape):
     """Creates and saves a large matrix with random data, tile by tile."""
     print(f"Creating random matrix at '{filepath}' with shape {shape}...")
@@ -129,7 +145,7 @@ def multiply_eager(A: MiniMatrix, B: MiniMatrix):
         return C
 
 # --- Main Execution Block ---
-if __name__ == "__main__":
+def main():
     # Create the data directory if it doesn't exist
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
@@ -140,45 +156,70 @@ if __name__ == "__main__":
 
     # Create the matrix file if it doesn't already exist
     if not os.path.exists(path_A):
-        create_random_matrix(path_A, shape_A)
+        print(f"Creating matrix at '{path_A}'...")
+        writer = MiniMatrix(path_A, shape_A, mode='w+')
+        writer.close()
+        print("Matrix creation complete.")
     
-    # Instantiate our matrix object
-    A = MiniMatrix(path_A, shape_A)
-    print(f"Successfully loaded matrix representation: {A}")
+    # lazy execution logic
+    print("\n--- Wrapping Eager matrix in Lazy container ---")
 
-    # --- Setup Matrix B for Addition ---
-    # It must have the same shape as A
-    shape_B_add = (3500, 4200)
-    path_B_add = os.path.join(DATA_DIR, "B_add.bin")
-    if not os.path.exists(path_B_add):
-        create_random_matrix(path_B_add, shape_B_add)
-    B_add = MiniMatrix(path_B_add, shape_B_add)
-    print(f"Loaded matrix representation: {B_add}")
+    # 1. Open a handle to the physical on-disk matrix
+    A_handle = MiniMatrix(path_A, shape_A, mode='r')
+    print(f"Opened eager matrix: {A_handle}")
+
+    # 2. Wrap the eager matrix in our lazy engine's "leaf" operation
+    leaf_op = EagerMatrixOp(A_handle)
+
+    # 3. Create the main LazyMatrix object to hold this plan
+    A_lazy = LazyMatrix(leaf_op)
+    print(f"Created a lazy wrapper for the matrix: {A_lazy}")
+
+    # 4. Clean up the file handle
+    A_handle.close()
     
-    # --- Perform Eager Addition ---
-    print("\n--- Starting Eager Addition ---")
-    start_time = time.time()
-    C_add = add_eager(A, B_add)
-    A.close()
-    B_add.close()
-    C_add.close()
-    end_time = time.time()
-    print(f"Eager Addition finished in {end_time - start_time:.2f} seconds. Result: {C_add}")
+    
+    # # Instantiate our matrix object
+    # A = MiniMatrix(path_A, shape_A)
+    # print(f"Successfully loaded matrix representation: {A}")
 
-    # --- Setup Matrix B for Multiplcation ---
-    shape_B_mul = (4200, 3800)
-    path_B_mul = os.path.join(DATA_DIR, "B_mul.bin")
-    if not os.path.exists(path_B_mul):
-        create_random_matrix(path_B_mul, shape_B_mul)
-    B_mul = MiniMatrix(path_B_mul, shape_B_mul)
-    print(f"Loaded matrix representation: {B_mul}")
+    # # --- Setup Matrix B for Addition ---
+    # # It must have the same shape as A
+    # shape_B_add = (3500, 4200)
+    # path_B_add = os.path.join(DATA_DIR, "B_add.bin")
+    # if not os.path.exists(path_B_add):
+    #     create_random_matrix(path_B_add, shape_B_add)
+    # B_add = MiniMatrix(path_B_add, shape_B_add)
+    # print(f"Loaded matrix representation: {B_add}")
+    
+    # # --- Perform Eager Addition ---
+    # print("\n--- Starting Eager Addition ---")
+    # start_time = time.time()
+    # C_add = add_eager(A, B_add)
+    # A.close()
+    # B_add.close()
+    # C_add.close()
+    # end_time = time.time()
+    # print(f"Eager Addition finished in {end_time - start_time:.2f} seconds. Result: {C_add}")
 
-    # --- Perform Eager Addition ---
-    print("\n--- Starting Eager Multiplication ---")
-    start_time = time.time()
-    C_mul = multiply_eager(A, B_mul)
-    A.close()
-    B_mul.close()
-    C_mul.close()
-    end_time = time.time()
-    print(f"Eager Multiplication finished in {end_time - start_time:.2f} seconds. Result: {C_mul}")
+    # # --- Setup Matrix B for Multiplcation ---
+    # shape_B_mul = (4200, 3800)
+    # path_B_mul = os.path.join(DATA_DIR, "B_mul.bin")
+    # if not os.path.exists(path_B_mul):
+    #     create_random_matrix(path_B_mul, shape_B_mul)
+    # B_mul = MiniMatrix(path_B_mul, shape_B_mul)
+    # print(f"Loaded matrix representation: {B_mul}")
+
+    # # --- Perform Eager Addition ---
+    # print("\n--- Starting Eager Multiplication ---")
+    # start_time = time.time()
+    # C_mul = multiply_eager(A, B_mul)
+    # A.close()
+    # B_mul.close()
+    # C_mul.close()
+    # end_time = time.time()
+    # print(f"Eager Multiplication finished in {end_time - start_time:.2f} seconds. Result: {C_mul}")
+
+
+if __name__ == "__main__":
+    main()
