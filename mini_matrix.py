@@ -47,6 +47,7 @@ class EagerMatrixOp:
     def execute(self, path):
         """Executing a leaf node simply means returning the handle to the existing matrix."""
         print(f" - Executing EagerMatrixOp: Providing handle to '{self.matrix.filepath}")
+        return self.matrix
 
 class AddOp:
     """An operation node representing addition in our computation plan."""
