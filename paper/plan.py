@@ -1,6 +1,9 @@
+
+from . import optimizer
+
 class EagerMatrixOp:
     """An operation that represents an already computed matrix on disk. This is the leaf of our plan."""
-    def __init__(self, matrix: MiniMatrix):
+    def __init__(self, matrix: PaperMatrix):
         self.matrix = matrix
         self.shape = matrix.shape
 
@@ -31,8 +34,8 @@ class AddOp:
         matrix_A = self.left.op.execute(None)
         matrix_B = self.right.op.execute(None)
 
-        print(" - Calling 'add_eager' to perform the computation...")
-        return add_eager(matrix_A, matrix_B, output_path)
+        print(" - Calling 'add' to perform the computation...")
+        return add(matrix_A, matrix_B, output_path)
 
 class MultiplyOp:
     """An operation node representing addition in our computation plan."""
@@ -53,8 +56,8 @@ class MultiplyOp:
         matrix_A = self.left.op.execute(None)
         matrix_B = self.right.op.execute(None)
 
-        print(" - Calling 'add_eager' to perform the computation...")
-        return add_eager(matrix_A, matrix_B, output_path)
+        print(" - Calling 'add' to perform the computation...")
+        return add(matrix_A, matrix_B, output_path)
 
 class MultiplyScalarOp:
     """An operation node representing multiplication by a scalar."""
@@ -86,7 +89,7 @@ class MultiplyScalarOp:
             # 1. Compute the input matrix first
             TMP = self.left.compute(output_path + ".tmp")
             # 2. Then, peform the scalar multiplication
-            C = MiniMatrix(output_path, self.shape, mode='w+')
+            C = PaperMatrix(output_path, self.shape, mode='w+')
             for r in range(0, self.shape[0], TILE_SIZE):
                 for c in range(0, self.shape[1], TILE_SIZE):
                     C.data[r:r+TILE_SIZE, c:c+TILE_SIZE] = TMP.data[r:r+TILE_SIZE, c:c+TILE_SIZE] * self.right

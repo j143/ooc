@@ -1,9 +1,18 @@
-def add_eager(A: MiniMatrix, B: MiniMatrix, output_path: str):
+
+# --- Purpose: Contains the high-performance execution kernels. ---
+
+import numpy as np
+from .core import PaperMatrix
+
+TILE_SIZE = 1000
+
+
+def add(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
     """Performs out-of-core matrix addition: C = A + B."""
     if A.shape != B.shape:
         raise ValueError("Matrices must have the same shape for addition.")
 
-    C = MiniMatrix(output_path, A.shape, mode='w+')
+    C = PaperMatrix(output_path, A.shape, mode='w+')
     
     print("Performing eager addition...")
     rows, cols = A.shape
@@ -27,14 +36,14 @@ def add_eager(A: MiniMatrix, B: MiniMatrix, output_path: str):
     print("Addition complete.")
     return C
 
-def multiply_eager(A: MiniMatrix, B: MiniMatrix):
+def multiply(A: PaperMatrix, B: PaperMatrix) -> PaperMatrix:
     """Performs out-of-core tiled matrix multiplication: C = A @ B."""
     if A.shape[1] != B.shape[0]:
         raise ValueError("Inner dimensions must match for multiplication.")
     
     C_shape = (A.shape[0], B.shape[1])
     C_path = os.path.join(DATA_DIR, "C_mul.bin")
-    C = MiniMatrix(C_path, C_shape, mode='w+')
+    C = PaperMatrix(C_path, C_shape, mode='w+')
 
     print("Performing eager multiplication...")
     rows_A, K, cols_B = A.shape[0], A.shape[1], B.shape[1]
@@ -65,3 +74,28 @@ def multiply_eager(A: MiniMatrix, B: MiniMatrix):
         C.data.flush()
         print("Multiplication complete.")
         return C
+
+def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, output_path: str) -> PaperMatrix:
+    """
+    Performs the fused (A+B) * scalar operation in a single pass
+    without creating a temporary matrix for (A + B).
+    """
+    C = PaperMatrix(output_path, A.shape, mode='w+')
+    rows, cols = A.shape
+    for r_start in range(0, rows, TILE_SIZE):
+        r_end = min(r_start + TILE_SIZE, rows)
+        for c_start in range(0, cols, TILE_SIZE):
+            c_end = min(c_start + TILE_SIZE, cols)
+
+            # read input files
+            tile_A = A.data[r_start:r_end, c_start:c_end]
+            tile_B = B.data[r_start:r_end, c_start:c_end]
+
+            # Perform the entire operation in memory
+            fused_result_tile = (tile_A + tile_B) * scalar
+
+            # Write the final result directly to the output file
+            C.data[r_start:r_end, c_start:c_end] = fused_result_tile
+    
+    C.data.flush()
+    return C

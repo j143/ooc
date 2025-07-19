@@ -1,5 +1,7 @@
 # --- Purpose: To inspect a plan and choose the best execution strategy. ---
 
+from . import backend
+from .plan import Plan, EagerMatrix, AddOp, MultiplyOp, MultiplyScalarOp
 # The rule registry
 # Pattern: (OuterOp, InnerOp), Kernel: function_to_execute
 FUSION_RULES = [
@@ -25,28 +27,3 @@ def execute(plan, output_path: str):
     # If no special rule matches, execute the default, non-fused way
     print("Optimizer: No fusion pattern found. Executing default.")
     return plan.op.execute(output_path) # The original, slower path
-
-def execute_fused_add_multiply(A: MiniMatrix, B: MiniMatrix, scalar: float, output_path: str):
-    """
-    Performs the fused (A+B) * scalar operation in a single pass
-    without creating a temporary matrix for (A + B).
-    """
-    C = MiniMatrix(output_path, A.shape, mode='w+')
-    rows, cols = A.shape
-    for r_start in range(0, rows, TILE_SIZE):
-        r_end = min(r_start + TILE_SIZE, rows)
-        for c_start in range(0, cols, TILE_SIZE):
-            c_end = min(c_start + TILE_SIZE, cols)
-
-            # read input files
-            tile_A = A.data[r_start:r_end, c_start:c_end]
-            tile_B = B.data[r_start:r_end, c_start:c_end]
-
-            # Perform the entire operation in memory
-            fused_result_tile = (tile_A + tile_B) * scalar
-
-            # Write the final result directly to the output file
-            C.data[r_start:r_end, c_start:c_end] = fused_result_tile
-    
-    C.data.flush()
-    return C
