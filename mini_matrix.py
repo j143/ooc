@@ -43,6 +43,10 @@ class EagerMatrixOp:
 
     def __repr__(self):
         return f"EagerMatrixOp(path='{self.matrix.filepath})"
+    
+    def execute(self, path):
+        """Executing a leaf node simply means returning the handle to the existing matrix."""
+        print(f" - Executing EagerMatrixOp: Providing handle to '{self.matrix.filepath}")
 
 class AddOp:
     """An operation node representing addition in our computation plan."""
@@ -57,6 +61,15 @@ class AddOp:
         # !r calls the repr() of the inner objects, creating a nested view
         return f"AddOp(left={self.left!r}, right={self.right!r})"
 
+    def execute(self, output_path):
+        """Executes the addition plan."""
+        print(" - Execute AddOp: Get inputs...")
+        matrix_A = self.left.op.execute(None)
+        matrix_B = self.right.op.execute(None)
+
+        print(" - Calling 'add_eager' to perform the computation...")
+        return add_eager(matrix_A, matrix_B, output_path)
+
 class LazyMatrix:
     """Represents a computation that will result in a matrix, but is not yet executed."""
     def __init__(self, op):
@@ -70,6 +83,12 @@ class LazyMatrix:
     def __add__(self, x: 'LazyMatrix'):
         print("Build an 'AddOp' plan...")
         return LazyMatrix(AddOp(self, x))
+
+    def compute(self, output_path):
+        """Triggers the execution of the entire computation plan."""
+        result_matrix = self.op.execute(output_path)
+        return result_matrix
+
 
 def create_random_matrix(filepath, shape):
     """Creates and saves a large matrix with random data, tile by tile."""
@@ -94,14 +113,12 @@ def create_random_matrix(filepath, shape):
     matrix.close()
     
 
-def add_eager(A: MiniMatrix, B: MiniMatrix):
+def add_eager(A: MiniMatrix, B: MiniMatrix, output_path: str):
     """Performs out-of-core matrix addition: C = A + B."""
     if A.shape != B.shape:
         raise ValueError("Matrices must have the same shape for addition.")
 
-    # Create the output matrix file in write mode
-    C_path = os.path.join(DATA_DIR, "C_add.bin")
-    C = MiniMatrix(C_path, A.shape, mode='w+')
+    C = MiniMatrix(output_path, A.shape, mode='w+')
     
     print("Performing eager addition...")
     rows, cols = A.shape
@@ -182,29 +199,30 @@ def main():
             writer.close()
     
     # lazy execution logic
-    print("\n--- Wrapping Eager matrix in Lazy container ---")
+    print("\n--- Build and execute a lazy addition plan ---")
 
-    # 1. Open a handle to the physical on-disk matrix
     A_handle = MiniMatrix(path_A, shape_A, mode='r')
     B_handle = MiniMatrix(path_B, shape_A, mode='r')
-    print(f"Opened eager matrix: {A_handle}")
-
-    # 2. Wrap the eager matrix in our lazy engine's "leaf" operation
-    # & create the main LazyMatrix object to hold this plan
     A_lazy = LazyMatrix(EagerMatrixOp(A_handle))
     B_lazy = LazyMatrix(EagerMatrixOp(B_handle))
-    print(f"Created a lazy wrapper for the matrix: {A_lazy!r} \n {B_lazy!r}")
 
-    # 3. Build the plan using the '+' operator
+    # 1. Build the plan using the '+' operator
     #   This calls our __add__ method.
     plan = A_lazy + B_lazy
+    print(f"\n plan built: '{plan!r}'")
 
-    print("\n plan built successfully. Plan object:")
-    print(plan)
+    # 2. Execute the plan using .compute()
+    result_file_path = os.path.join(DATA_DIR, "C_lazy_add.bin")
+    start_time = time.time()
+    result_matrix = plan.compute(result_file_path)
+    end_time = time.time()
 
-    # 5. Clean up the file handle
+    print(f"\nExecution finished in {end_time - start_time:.2f} seconds.")
+
+    # 3. Clean up the file handle
     A_handle.close()
     B_handle.close()
+    result_matrix.close()
 
     
     # # Instantiate our matrix object
