@@ -117,6 +117,20 @@ class MultiplyScalarOp:
                 self.right, # The scalar value
                 output_path
             )
+        else:
+            # Fallback to general case (non-fused)
+            print("Optimizer: No fusion pattern detected. Executing step-by-step.")
+            # 1. Compute the input matrix first
+            TMP = self.left.compute(output_path + ".tmp")
+            # 2. Then, peform the scalar multiplication
+            C = MiniMatrix(output_path, self.shape, mode='w+')
+            for r in range(0, self.shape[0], TILE_SIZE):
+                for c in range(0, self.shape[1], TILE_SIZE):
+                    C.data[r:r+TILE_SIZE, c:c+TILE_SIZE] = TMP.data[r:r+TILE_SIZE, c:c+TILE_SIZE] * self.right
+            
+            C.data.flush()
+            TMP.close()
+            return C
 
 def execute_fused_add_multiply(A: MiniMatrix, B: MiniMatrix, scalar: float, output_path: str):
     """
@@ -298,7 +312,7 @@ def main():
 
     # 1. Build the plan using the '+' operator
     #   This calls our __add__ method.
-    plan = (A_lazy + B_lazy) * 2
+    plan = (A_lazy) * 2
     plan2 = A_lazy @ C_lazy
     print(f"\n plan built: '{plan!r}'")
 
