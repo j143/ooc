@@ -71,6 +71,28 @@ class AddOp:
         print(" - Calling 'add_eager' to perform the computation...")
         return add_eager(matrix_A, matrix_B, output_path)
 
+class MultiplyOp:
+    """An operation node representing addition in our computation plan."""
+    def __init__(self, left: 'LazyMatrix', right: 'LazyMatrix'):
+        if left.shape[1] != right.shape[0]:
+            raise ValueError("Shapes must match for lazy addition.")
+        self.left = left
+        self.right = right
+        self.shape = (left.shape[0], right.shape[1])
+    
+    def __repr__(self):
+        # !r calls the repr() of the inner objects, creating a nested view
+        return f"AddOp(left={self.left!r}, right={self.right!r})"
+
+    def execute(self, output_path):
+        """Executes the addition plan."""
+        print(" - Execute AddOp: Get inputs...")
+        matrix_A = self.left.op.execute(None)
+        matrix_B = self.right.op.execute(None)
+
+        print(" - Calling 'add_eager' to perform the computation...")
+        return add_eager(matrix_A, matrix_B, output_path)
+
 class LazyMatrix:
     """Represents a computation that will result in a matrix, but is not yet executed."""
     def __init__(self, op):
@@ -84,6 +106,10 @@ class LazyMatrix:
     def __add__(self, x: 'LazyMatrix'):
         print("Build an 'AddOp' plan...")
         return LazyMatrix(AddOp(self, x))
+    
+    def __matmul__(self, x: 'LazyMatrix'):
+        print("Build an 'MultiplyOp' plan")
+        return LazyMatrix(MultiplyOp(self, x))
 
     def compute(self, output_path):
         """Triggers the execution of the entire computation plan."""
@@ -190,13 +216,15 @@ def main():
 
     # Define the shape of our first test matrix
     shape_A = (3500, 4200)
+    shape_C = (4200, 4000)
     path_A = os.path.join(DATA_DIR, "A.bin")
     path_B = os.path.join(DATA_DIR, "B_add.bin")
+    path_C = os.path.join(DATA_DIR, "C_mul.bin")
 
     # Create the matrix file if it doesn't already exist
-    for path, shape in {path_A: shape_A, path_B: shape_A}.items():
-        if not os.path.exists(path_A):
-            writer = MiniMatrix(path_A, shape_A, mode='w+')
+    for path, shape in {path_A: shape_A, path_B: shape_A, path_C: shape_C}.items():
+        if not os.path.exists(path):
+            writer = MiniMatrix(path, shape, mode='w+')
             writer.close()
     
     # lazy execution logic
@@ -204,26 +232,38 @@ def main():
 
     A_handle = MiniMatrix(path_A, shape_A, mode='r')
     B_handle = MiniMatrix(path_B, shape_A, mode='r')
+    C_handle = MiniMatrix(path_C, shape_C, mode='r')
     A_lazy = LazyMatrix(EagerMatrixOp(A_handle))
     B_lazy = LazyMatrix(EagerMatrixOp(B_handle))
+    C_lazy = LazyMatrix(EagerMatrixOp(C_handle))
 
     # 1. Build the plan using the '+' operator
     #   This calls our __add__ method.
     plan = A_lazy + B_lazy
+    plan2 = A_lazy @ C_lazy
     print(f"\n plan built: '{plan!r}'")
 
     # 2. Execute the plan using .compute()
-    result_file_path = os.path.join(DATA_DIR, "C_lazy_add.bin")
+    result_file_path = os.path.join(DATA_DIR, "L_lazy_add.bin")
     start_time = time.time()
     result_matrix = plan.compute(result_file_path)
     end_time = time.time()
 
     print(f"\nExecution finished in {end_time - start_time:.2f} seconds.")
 
+    A_handle.close()
+
+    result_file_path = os.path.join(DATA_DIR, "M_lazy_add.bin")
+    start_time = time.time()
+    result_matrix2 = plan.compute(result_file_path)
+    end_time = time.time()
+
     # 3. Clean up the file handle
     A_handle.close()
     B_handle.close()
+    C_handle.close()
     result_matrix.close()
+    result_matrix2.close()
 
 
 if __name__ == "__main__":
