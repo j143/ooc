@@ -93,6 +93,56 @@ class MultiplyOp:
         print(" - Calling 'add_eager' to perform the computation...")
         return add_eager(matrix_A, matrix_B, output_path)
 
+class MultiplyScalarOp:
+    """An operation node representing multiplication by a scalar."""
+    def __init__(self, left: 'LazyMatrix', right: float):
+        self.left = left
+        self.right = right
+        self.shape = left.shape
+    
+    def __repr__(self):
+        return f"MultiplyScalarOp(left={self.left!r}, scalar={self.right})"
+
+    def execute(self, output_path):
+        """This is our 'mini-optimizer'. It checks if it can use a fast, fused kernel."""
+        # THE OPTIMIZATION RULE:
+        # If my left input is an addition operation...
+        if isinstance(self.left.op, AddOp):
+            print("Optimizer: Fused Add-Multiply pattern detected! Calling fast kernel.")
+            # ...then call the special fused execution function
+            add_op = self.left.op
+            return execute_fused_add_multiply(
+                add_op.left.op.matrix, # Matrix A
+                add_op.right.op.matrix, # Matrix B
+                self.right, # The scalar value
+                output_path
+            )
+
+def execute_fused_add_multiply(A: MiniMatrix, B: MiniMatrix, scalar: float, output_path: str):
+    """
+    Performs the fused (A+B) * scalar operation in a single pass
+    without creating a temporary matrix for (A + B).
+    """
+    C = MiniMatrix(output_path, A.shape, mode='w+')
+    rows, cols = A.shape
+    for r_start in range(0, rows, TILE_SIZE):
+        r_end = min(r_start + TILE_SIZE, rows)
+        for c_start in range(0, cols, TILE_SIZE):
+            c_end = min(c_start + TILE_SIZE, cols)
+
+            # read input files
+            tile_A = A.data[r_start:r_end, c_start:c_end]
+            tile_B = B.data[r_start:r_end, c_start:c_end]
+
+            # Perform the entire operation in memory
+            fused_result_tile = (tile_A + tile_B) * scalar
+
+            # Write the final result directly to the output file
+            C.data[r_start:r_end, c_start:c_end] = fused_result_tile
+    
+    C.data.flush()
+    return C
+
 class LazyMatrix:
     """Represents a computation that will result in a matrix, but is not yet executed."""
     def __init__(self, op):
@@ -110,6 +160,15 @@ class LazyMatrix:
     def __matmul__(self, x: 'LazyMatrix'):
         print("Build an 'MultiplyOp' plan")
         return LazyMatrix(MultiplyOp(self, x))
+
+    def __mul__(self, x):
+        if isinstance(x, (int, float)):
+            return LazyMatrix(MultiplyScalarOp(self, x))
+        raise NotImplementedError("Only scalar multiplication is supported.")
+    
+    def __rmul__(self, x):
+        # Handles the case `2 * my_lazy_matrix`
+        return self.__mul__(x)
 
     def compute(self, output_path):
         """Triggers the execution of the entire computation plan."""
@@ -239,7 +298,7 @@ def main():
 
     # 1. Build the plan using the '+' operator
     #   This calls our __add__ method.
-    plan = A_lazy + B_lazy
+    plan = (A_lazy + B_lazy) * 2
     plan2 = A_lazy @ C_lazy
     print(f"\n plan built: '{plan!r}'")
 
