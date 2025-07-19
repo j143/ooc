@@ -5,7 +5,7 @@ from .plan import Plan, EagerNode, AddNode, MultiplyNode, MultiplyScalarNode
 # The rule registry
 # Pattern: (OuterOp, InnerOp), Kernel: function_to_execute
 FUSION_RULES = [
-    ((MultiplyScalarNode, AddNode), execute_fused_add_multiply),
+    ((MultiplyScalarNode, AddNode), backend.execute_fused_add_multiply),
     # Future rules go here, e.g., ((AddNode, MultiplyNode), fused_kernel_2)
 ]
 
@@ -21,8 +21,13 @@ def execute(plan, output_path: str):
         OuterOp, InnerOp = pattern
         if isinstance(plan.op, OuterOp) and isinstance(plan.op.left.op, InnerOp):
             print(f"✨ Optimizer: Found pattern {pattern}. Using fused kernel.")
-            # Call the specialized kernel
-            return kernel(...) # You'll need to pass the right components from the plan
+            # Get the components needed for the fused operation
+            if OuterOp == MultiplyScalarNode and InnerOp == AddNode:
+                add_node = plan.op.left.op
+                matrix_A = add_node.left.op.execute(None)
+                matrix_B = add_node.right.op.execute(None)
+                scalar = plan.op.right
+                return kernel(matrix_A, matrix_B, scalar, output_path)
 
     # If no special rule matches, execute the default, non-fused way
     print("Optimizer: No fusion pattern found. Executing default.")

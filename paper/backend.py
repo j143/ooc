@@ -2,6 +2,7 @@
 # --- Purpose: Contains the high-performance execution kernels. ---
 
 import numpy as np
+import os
 from .core import PaperMatrix
 
 TILE_SIZE = 1000
@@ -36,14 +37,13 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
     print("Addition complete.")
     return C
 
-def multiply(A: PaperMatrix, B: PaperMatrix) -> PaperMatrix:
+def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
     """Performs out-of-core tiled matrix multiplication: C = A @ B."""
     if A.shape[1] != B.shape[0]:
         raise ValueError("Inner dimensions must match for multiplication.")
     
     C_shape = (A.shape[0], B.shape[1])
-    C_path = os.path.join(DATA_DIR, "C_mul.bin")
-    C = PaperMatrix(C_path, C_shape, mode='w+')
+    C = PaperMatrix(output_path, C_shape, mode='w+')
 
     print("Performing eager multiplication...")
     rows_A, K, cols_B = A.shape[0], A.shape[1], B.shape[1]
@@ -70,10 +70,10 @@ def multiply(A: PaperMatrix, B: PaperMatrix) -> PaperMatrix:
             
             # 4. write the final computed tile to disk
             C.data[r_start:r_end, c_start:c_end] = tile_C
-        
-        C.data.flush()
-        print("Multiplication complete.")
-        return C
+    
+    C.data.flush()
+    print("Multiplication complete.")
+    return C
 
 def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, output_path: str) -> PaperMatrix:
     """

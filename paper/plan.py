@@ -1,5 +1,10 @@
 
-from . import optimizer
+# from . import optimizer
+from .backend import add
+from .backend import multiply
+from .core import PaperMatrix
+from .backend import TILE_SIZE
+from .backend import execute_fused_add_multiply
 
 class Plan:
     """Represents a computation that will result in a matrix, but is not yet executed."""
@@ -71,25 +76,25 @@ class AddNode:
         return add(matrix_A, matrix_B, output_path)
 
 class MultiplyNode:
-    """An operation node representing addition in our computation plan."""
+    """An operation node representing matrix multiplication in our computation plan."""
     def __init__(self, left: 'Plan', right: 'Plan'):
         if left.shape[1] != right.shape[0]:
-            raise ValueError("Shapes must match for lazy addition.")
+            raise ValueError("Inner dimensions must match for matrix multiplication.")
         self.left = left
         self.right = right
         self.shape = (left.shape[0], right.shape[1])
     
     def __repr__(self):
         # !r calls the repr() of the inner objects, creating a nested view
-        return f"AddNode(left={self.left!r}, right={self.right!r})"
+        return f"MultiplyNode(left={self.left!r}, right={self.right!r})"
 
     def execute(self, output_path):
-        """Executes the addition plan."""
-        print(" - Execute AddNode: Get inputs...")
+        """Executes the multiplication plan."""
+        print(" - Execute MultiplyNode: Get inputs...")
         matrix_A = self.left.op.execute(None)
         matrix_B = self.right.op.execute(None)
 
-        print(" - Calling 'add' to perform the computation...")
+        print(" - Calling 'multiply' to perform the computation...")
         return multiply(matrix_A, matrix_B, output_path)
 
 class MultiplyScalarNode:
@@ -110,9 +115,12 @@ class MultiplyScalarNode:
             print("Optimizer: Fused Add-Multiply pattern detected! Calling fast kernel.")
             # ...then call the special fused execution function
             add_op = self.left.op
+            # Get the actual matrix handles from the eager nodes
+            matrix_A = add_op.left.op.execute(None)
+            matrix_B = add_op.right.op.execute(None)
             return execute_fused_add_multiply(
-                add_op.left.op.matrix, # Matrix A
-                add_op.right.op.matrix, # Matrix B
+                matrix_A, # Matrix A
+                matrix_B, # Matrix B
                 self.right, # The scalar value
                 output_path
             )
@@ -121,11 +129,13 @@ class MultiplyScalarNode:
             print("Optimizer: No fusion pattern detected. Executing step-by-step.")
             # 1. Compute the input matrix first
             TMP = self.left.compute(output_path + ".tmp")
-            # 2. Then, peform the scalar multiplication
+            # 2. Then, perform the scalar multiplication
             C = PaperMatrix(output_path, self.shape, mode='w+')
             for r in range(0, self.shape[0], TILE_SIZE):
+                r_end = min(r + TILE_SIZE, self.shape[0])
                 for c in range(0, self.shape[1], TILE_SIZE):
-                    C.data[r:r+TILE_SIZE, c:c+TILE_SIZE] = TMP.data[r:r+TILE_SIZE, c:c+TILE_SIZE] * self.right
+                    c_end = min(c + TILE_SIZE, self.shape[1])
+                    C.data[r:r_end, c:c_end] = TMP.data[r:r_end, c:c_end] * self.right
             
             C.data.flush()
             TMP.close()
