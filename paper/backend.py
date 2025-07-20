@@ -4,6 +4,7 @@
 import numpy as np
 import os
 from .core import PaperMatrix
+from concurrent.futures import ThreadPoolExecutor
 
 TILE_SIZE = 1000
 
@@ -75,27 +76,46 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
     print("Multiplication complete.")
     return C
 
+# New parallel kernel
+
+def _process_fused_tile(A_data, B_data, scalar, r_start, r_end, c_start, c_end):
+    """Helper function to process a single tile. This is what each thread runs."""
+    tile_A = A_data[r_start:r_end, c_start:c_end]
+    tile_B = B_data[r_start:r_end, c_start:c_end]
+    fused_result_tile = (tile_A + tile_B) * scalar
+    return r_start, c_start, fused_result_tile
+
 def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, output_path: str) -> PaperMatrix:
     """
-    Performs the fused (A+B) * scalar operation in a single pass
-    without creating a temporary matrix for (A + B).
+    Performs the fused (A + B) * scalar operation in parallel.
     """
     C = PaperMatrix(output_path, A.shape, mode='w+')
     rows, cols = A.shape
-    for r_start in range(0, rows, TILE_SIZE):
-        r_end = min(r_start + TILE_SIZE, rows)
-        for c_start in range(0, cols, TILE_SIZE):
-            c_end = min(c_start + TILE_SIZE, cols)
+    
+    # Use a ThreadPoolExecutor to manage a pool of worker threads.
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = []
+        # Submit all tile-processing tasks to the thread pool.
+        for r_start in range(0, rows, TILE_SIZE):
+            r_end = min(r_start + TILE_SIZE, rows)
+            for c_start in range(0, cols, TILE_SIZE):
+                c_end = min(c_start + TILE_SIZE, cols)
+                # submit() schedules the function to run and returns a Future object.
+                future = executor.submit(
+                    _process_fused_tile,
+                    A.data, B.data, scalar,
+                    r_start, r_end, c_start, c_end
+                )
+                futures.append(future)
 
-            # read input files
-            tile_A = A.data[r_start:r_end, c_start:c_end]
-            tile_B = B.data[r_start:r_end, c_start:c_end]
-
-            # Perform the entire operation in memory
-            fused_result_tile = (tile_A + tile_B) * scalar
-
-            # Write the final result directly to the output file
-            C.data[r_start:r_end, c_start:c_end] = fused_result_tile
+        # Retrieve results as they complete.
+        for future in futures:
+            # future.result() waits for the task to finish and gets its return value.
+            r_start, c_start, result_tile = future.result()
+            r_end = r_start + result_tile.shape[0]
+            c_end = c_start + result_tile.shape[1]
+            # Write the computed tile to the correct location in the output file.
+            C.data[r_start:r_end, c_start:c_end] = result_tile
     
     C.data.flush()
     return C
