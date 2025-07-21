@@ -57,3 +57,7 @@ python ./tests/run_tests.py fused
 python ./tests/run_tests.py scalar
 ```
 
+### Buffer Manager architecture
+
+
+![Buffer manager architecture](/buffer-manager-architecture.svg "Buffer Manager")
