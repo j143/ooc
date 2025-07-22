@@ -22,6 +22,23 @@ class PaperMatrix:
         # without reading the entire file into memory. NumPy’s memmap’s are array-like objects.
         self.data = np.memmap(self.filepath, dtype=self.dtype, mode=mode, shape=self.shape)
         
+    def get_tile(self, r_start, c_start):
+        """
+        Safely extracts a tile from the memory-mapped file.
+        This method contains the workaround for the memmap slicing issue.
+        """
+        r_end = min(r_start + TILE_SIZE, self.shape[0])
+        c_end = min(c_start + TILE_SIZE, self.shape[1])
+
+        # 1. Slice the rows, which returns a view
+        row_view = self.data[r_start:r_end]
+        # 2. Immediately copy this view into a new, concrete in-memory array
+        in_memory_rows = np.array(row_view, copy=True)  # Ensure we have a copy in memory
+        # 3. Now, slice the columns from the clean, in-memory array
+        tile = in_memory_rows[:, 0:(c_end - c_start)]
+        return tile
+
+
     def close(self):
         """Explicitly closes the underlying memory-mapped file handle."""
         
