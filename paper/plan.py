@@ -79,8 +79,9 @@ class AddNode:
     def execute(self, output_path, buffer_manager):
         """Executes the addition plan."""
         print(" - Execute AddNode: Get inputs...")
-        matrix_A = self.left.op.execute(None)
-        matrix_B = self.right.op.execute(None)
+        # Create temporary paths for intermediate results if needed
+        matrix_A = self.left.op.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
+        matrix_B = self.right.op.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
 
         print(" - Calling 'add' to perform the computation...")
         return add(matrix_A, matrix_B, output_path, buffer_manager)
@@ -98,14 +99,15 @@ class MultiplyNode:
         # !r calls the repr() of the inner objects, creating a nested view
         return f"MultiplyNode(left={self.left!r}, right={self.right!r})"
 
-    def execute(self, output_path):
+    def execute(self, output_path, buffer_manager):
         """Executes the multiplication plan."""
         print(" - Execute MultiplyNode: Get inputs...")
-        matrix_A = self.left.op.execute(None)
-        matrix_B = self.right.op.execute(None)
+        # Create temporary paths for intermediate results if needed
+        matrix_A = self.left.op.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
+        matrix_B = self.right.op.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
 
         print(" - Calling 'multiply' to perform the computation...")
-        return multiply(matrix_A, matrix_B, output_path)
+        return multiply(matrix_A, matrix_B, output_path, buffer_manager)
 
 class MultiplyScalarNode:
     """An operation node representing multiplication by a scalar."""
@@ -126,8 +128,8 @@ class MultiplyScalarNode:
             # ...then call the special fused execution function
             add_op = self.left.op
             # Get the actual matrix handles from the eager nodes
-            matrix_A = add_op.left.op.execute(None)
-            matrix_B = add_op.right.op.execute(None)
+            matrix_A = add_op.left.op.execute(None if output_path is None else output_path + ".fused.A.tmp", buffer_manager)
+            matrix_B = add_op.right.op.execute(None if output_path is None else output_path + ".fused.B.tmp", buffer_manager)
             return execute_fused_add_multiply(
                 matrix_A, # Matrix A
                 matrix_B, # Matrix B
