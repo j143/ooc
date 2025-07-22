@@ -6,6 +6,8 @@ from .core import PaperMatrix
 from .backend import TILE_SIZE
 from .backend import execute_fused_add_multiply
 
+from .buffer import BufferManager
+
 class Plan:
     """Represents a computation that will result in a matrix, but is not yet executed."""
     def __init__(self, op):
@@ -15,7 +17,8 @@ class Plan:
     
     def compute(self, output_path):
         """Triggers the execution of the entire computation plan."""
-        result_matrix = self.op.execute(output_path)
+        buffer_manager = BufferManager(max_cache_size_tiles=64)
+        result_matrix = self.op.execute(output_path, buffer_manager)
         return result_matrix
 
     def __repr__(self):
@@ -66,14 +69,14 @@ class AddNode:
         # !r calls the repr() of the inner objects, creating a nested view
         return f"AddNode(left={self.left!r}, right={self.right!r})"
 
-    def execute(self, output_path):
+    def execute(self, output_path, buffer_manager):
         """Executes the addition plan."""
         print(" - Execute AddNode: Get inputs...")
         matrix_A = self.left.op.execute(None)
         matrix_B = self.right.op.execute(None)
 
         print(" - Calling 'add' to perform the computation...")
-        return add(matrix_A, matrix_B, output_path)
+        return add(matrix_A, matrix_B, output_path, buffer_manager)
 
 class MultiplyNode:
     """An operation node representing matrix multiplication in our computation plan."""

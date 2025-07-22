@@ -2,6 +2,9 @@
 
 from . import backend
 from .plan import Plan, EagerNode, AddNode, MultiplyNode, MultiplyScalarNode
+
+from .buffer import BufferManager
+
 # The rule registry
 # Pattern: (OuterOp, InnerOp), Kernel: function_to_execute
 FUSION_RULES = [
@@ -11,7 +14,7 @@ FUSION_RULES = [
     ((MultiplyScalarNode, MultiplyScalarNode), backend.execute_fused_double_scalar),
 ]
 
-def execute(plan, output_path: str):
+def execute(plan, output_path: str, buffer_manager: BufferManager):
     """
     The main optimizer entry point. It checks for patterns and executes.
     1. Checks the plan against FUSION_RULES.
