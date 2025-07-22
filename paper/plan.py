@@ -8,7 +8,7 @@ from .backend import execute_fused_add_multiply
 
 from .buffer import BufferManager
 
-use_buffer_manager = True  # Set to False to disable buffer manager
+use_buffer_manager = False  # Set to False to disable buffer manager
 
 class Plan:
     """Represents a computation that will result in a matrix, but is not yet executed."""

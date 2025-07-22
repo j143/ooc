@@ -96,15 +96,15 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: B
 
 # New parallel kernel
 
-def _process_fused_tile(A_data, B_data, scalar, r_start, r_end, c_start, c_end, buffer_manager: BufferManager):
+def _process_fused_tile(A, B, scalar, r_start, r_end, c_start, c_end, buffer_manager: BufferManager):
     """Helper function to process a single tile. This is what each thread runs."""
     
     if buffer_manager:
-        tile_A = buffer_manager.get_tile(A_data, r_start, c_start)
-        tile_B = buffer_manager.get_tile(B_data, r_start, c_start)
+        tile_A = buffer_manager.get_tile(A, r_start, c_start)
+        tile_B = buffer_manager.get_tile(B, r_start, c_start)
     else:
-        tile_A = A_data[r_start:r_end, c_start:c_end]
-        tile_B = B_data[r_start:r_end, c_start:c_end]
+        tile_A = A.data[r_start:r_end, c_start:c_end]
+        tile_B = B.data[r_start:r_end, c_start:c_end]
 
     fused_result_tile = (tile_A + tile_B) * scalar
     return r_start, c_start, fused_result_tile
