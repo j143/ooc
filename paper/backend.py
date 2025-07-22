@@ -6,8 +6,9 @@ import os
 from .core import PaperMatrix
 from concurrent.futures import ThreadPoolExecutor
 
-TILE_SIZE = 1000
+from .buffer import BufferManager, TILE_SIZE
 
+buffer_manager = BufferManager(max_cache_size_tiles=64)
 
 def add(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
     """Performs out-of-core matrix addition: C = A + B."""
@@ -80,8 +81,11 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
 
 def _process_fused_tile(A_data, B_data, scalar, r_start, r_end, c_start, c_end):
     """Helper function to process a single tile. This is what each thread runs."""
-    tile_A = A_data[r_start:r_end, c_start:c_end]
-    tile_B = B_data[r_start:r_end, c_start:c_end]
+    # tile_A = A_data[r_start:r_end, c_start:c_end]
+    # tile_B = B_data[r_start:r_end, c_start:c_end]
+    tile_A = buffer_manager.get_tile(A_data, r_start, c_start)
+    tile_B = buffer_manager.get_tile(B_data, r_start, c_start)
+
     fused_result_tile = (tile_A + tile_B) * scalar
     return r_start, c_start, fused_result_tile
 
