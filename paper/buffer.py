@@ -1,6 +1,7 @@
 import collections
 import threading
 from .core import PaperMatrix
+import time
 
 import numpy as np
 
@@ -17,20 +18,27 @@ class BufferManager:
         self.lru_tracker = collections.OrderedDict() # Keeps track of usage order
         self.lock = threading.Lock() # Ensure thread-safe access to the cache
 
+        # -- New Logging Attribute --
+        # (timestamp, event_type, tile_key)
+        self.event_log = []
+
     def get_tile(self, matrix: PaperMatrix, r_start: int, c_start: int):
         """
         Fetches a tile, use the cache if possible, or loading from disk.
         """
         tile_key = (matrix.filepath, r_start, c_start)
+        current_time = time.perf_counter()
 
         with self.lock:
             if tile_key in self.cache:
                 # --- cache hit ---
                 # Mark as most recently used
                 self.lru_tracker.move_to_end(tile_key)
+                self.event_log.append((current_time, 'HIT', tile_key))
                 return self.cache[tile_key]
         
         # --- Cache miss ---
+        self.event_log.append((current_time, 'MISS', tile_key))
         # load from disk (outside the lock to allow concurrent I/O);
         r_end = min(r_start + TILE_SIZE, matrix.shape[0])
         c_end = min(c_start + TILE_SIZE, matrix.shape[1])
@@ -51,5 +59,13 @@ class BufferManager:
             if len(self.cache) > self.max_size:
                 lru_key, _ = self.lru_tracker.popitem(last=False)
                 del self.cache[lru_key]
+                # log the eviction event
+                self.event_log.append((current_time, 'EVICT', lru_key))
             
         return tile_data
+
+    def get_log(self):
+        """
+        Returns the event log of cache accesses.
+        """
+        return self.event_log
