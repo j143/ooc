@@ -10,14 +10,18 @@ from .buffer import BufferManager, TILE_SIZE
 
 buffer_manager = BufferManager(max_cache_size_tiles=64)
 
-def add(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
-    """Performs out-of-core matrix addition: C = A + B."""
+def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager) -> PaperMatrix:
+    """
+    Performs out-of-core matrix addition: C = A + B using the provided 
+    """
     if A.shape != B.shape:
         raise ValueError("Matrices must have the same shape for addition.")
-
+    
+    print(" - Backend: Executing buffered 'add' kernel" )
     C = PaperMatrix(output_path, A.shape, mode='w+')
     
-    print("Performing eager addition...")
+    
+    # loop now uses the buffer manager for all data reads
     rows, cols = A.shape
     # Iterate through the matrices tile by tile
     for r_start in range(0, rows, TILE_SIZE):
@@ -26,8 +30,10 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
             c_end = min(c_start + TILE_SIZE, cols)
             
             # 1. Read tiles from A and B into memory
-            tile_A = A.data[r_start:r_end, c_start:c_end]
-            tile_B = B.data[r_start:r_end, c_start:c_end]
+            # tile_A = A.data[r_start:r_end, c_start:c_end]
+            # tile_B = B.data[r_start:r_end, c_start:c_end]
+            tile_A = buffer_manager.get_tile(A, r_start, c_start)
+            tile_B = buffer_manager.get_tile(B, r_start, c_start)
             
             # 2. Compute the result in memory
             tile_C = tile_A + tile_B

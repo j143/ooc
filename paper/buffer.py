@@ -2,6 +2,8 @@ import collections
 import threading
 from .core import PaperMatrix
 
+import numpy as np
+
 TILE_SIZE = 1000
 
 class BufferManager:
@@ -19,7 +21,7 @@ class BufferManager:
         """
         Fetches a tile, use the cache if possible, or loading from disk.
         """
-        tile_key = (matrix.filename, r_start, c_start)
+        tile_key = (matrix.filepath, r_start, c_start)
 
         with self.lock:
             if tile_key in self.cache:
@@ -32,7 +34,12 @@ class BufferManager:
         # load from disk (outside the lock to allow concurrent I/O);
         r_end = min(r_start + TILE_SIZE, matrix.shape[0])
         c_end = min(c_start + TILE_SIZE, matrix.shape[1])
-        tile_data = matrix.data[r_start:r_end, c_start:c_end]
+
+        # Perform slicing in two steps as multi-dimensional slicing on memmap is not implemented
+        # tile_data = matrix.data[r_start:r_end, c_start:c_end]
+        tile_data = matrix.get_tile(r_start, c_start)
+        # row_slice = matrix.data[r_start:r_end]
+        # tile_data = row_slice[:, 0:(c_end - c_start)] # is this 0:(c_end - c_start) or c_start:c_end?
 
         with self.lock:
             # Add the new tile to the cache
