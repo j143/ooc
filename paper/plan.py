@@ -26,7 +26,8 @@ class Plan:
             print(" - No buffer manager used. Will read/write directly to disk.")
         
         result_matrix = self.op.execute(output_path, buffer_manager)
-        return result_matrix
+        # Return both the result matrix and the buffer manager for further use    
+        return result_matrix, buffer_manager
 
     def __repr__(self):
         return f"Plan(plan={self.op!r})"
