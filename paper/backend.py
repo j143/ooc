@@ -96,12 +96,15 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: B
 
 # New parallel kernel
 
-def _process_fused_tile(A_data, B_data, scalar, r_start, r_end, c_start, c_end):
+def _process_fused_tile(A_data, B_data, scalar, r_start, r_end, c_start, c_end, buffer_manager: BufferManager):
     """Helper function to process a single tile. This is what each thread runs."""
-    # tile_A = A_data[r_start:r_end, c_start:c_end]
-    # tile_B = B_data[r_start:r_end, c_start:c_end]
-    tile_A = buffer_manager.get_tile(A_data, r_start, c_start)
-    tile_B = buffer_manager.get_tile(B_data, r_start, c_start)
+    
+    if buffer_manager:
+        tile_A = buffer_manager.get_tile(A_data, r_start, c_start)
+        tile_B = buffer_manager.get_tile(B_data, r_start, c_start)
+    else:
+        tile_A = A_data[r_start:r_end, c_start:c_end]
+        tile_B = B_data[r_start:r_end, c_start:c_end]
 
     fused_result_tile = (tile_A + tile_B) * scalar
     return r_start, c_start, fused_result_tile
@@ -124,8 +127,9 @@ def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, ou
                 # submit() schedules the function to run and returns a Future object.
                 future = executor.submit(
                     _process_fused_tile,
-                    A.data, B.data, scalar,
-                    r_start, r_end, c_start, c_end
+                    A, B, scalar,
+                    r_start, r_end, c_start, c_end,
+                    buffer_manager
                 )
                 futures.append(future)
 
