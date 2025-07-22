@@ -8,7 +8,7 @@ from .backend import execute_fused_add_multiply
 
 from .buffer import BufferManager
 
-use_buffer_manager = False  # Set to False to disable buffer manager
+use_buffer_manager = True  # Set to False to disable buffer manager
 
 class Plan:
     """Represents a computation that will result in a matrix, but is not yet executed."""
@@ -58,7 +58,7 @@ class EagerNode:
     def __repr__(self):
         return f"EagerNode(path='{self.matrix.filepath})"
     
-    def execute(self, path):
+    def execute(self, path, buffer_manager):
         """Executing a leaf node simply means returning the handle to the existing matrix."""
         print(f" - Executing EagerNode: Providing handle to '{self.matrix.filepath}")
         return self.matrix
