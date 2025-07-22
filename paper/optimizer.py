@@ -14,7 +14,7 @@ FUSION_RULES = [
     ((MultiplyScalarNode, MultiplyScalarNode), backend.execute_fused_double_scalar),
 ]
 
-def execute(plan, output_path: str, buffer_manager: BufferManager):
+def execute(plan, output_path: str, buffer_manager: BufferManager | None):
     """
     The main optimizer entry point. It checks for patterns and executes.
     1. Checks the plan against FUSION_RULES.

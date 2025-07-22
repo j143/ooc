@@ -10,7 +10,7 @@ from .buffer import BufferManager, TILE_SIZE
 
 buffer_manager = BufferManager(max_cache_size_tiles=64)
 
-def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager) -> PaperMatrix:
+def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
     """
     Performs out-of-core matrix addition: C = A + B using the provided 
     """
@@ -32,8 +32,12 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
             # 1. Read tiles from A and B into memory
             # tile_A = A.data[r_start:r_end, c_start:c_end]
             # tile_B = B.data[r_start:r_end, c_start:c_end]
-            tile_A = buffer_manager.get_tile(A, r_start, c_start)
-            tile_B = buffer_manager.get_tile(B, r_start, c_start)
+            if buffer_manager:
+                tile_A = buffer_manager.get_tile(A, r_start, c_start)
+                tile_B = buffer_manager.get_tile(B, r_start, c_start)
+            else:
+                tile_A = A.data[r_start:r_end, c_start:c_end]
+                tile_B = B.data[r_start:r_end, c_start:c_end]
             
             # 2. Compute the result in memory
             tile_C = tile_A + tile_B

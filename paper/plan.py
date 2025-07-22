@@ -17,7 +17,12 @@ class Plan:
     
     def compute(self, output_path):
         """Triggers the execution of the entire computation plan."""
-        buffer_manager = BufferManager(max_cache_size_tiles=64)
+        buffer_manager = None
+        if use_buffer_manager:
+            buffer_manager = BufferManager(max_cache_size_tiles=64)
+        else:
+            print(" - No buffer manager used. Will read/write directly to disk.")
+        
         result_matrix = self.op.execute(output_path, buffer_manager)
         return result_matrix
 
