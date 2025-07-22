@@ -17,7 +17,6 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
     if A.shape != B.shape:
         raise ValueError("Matrices must have the same shape for addition.")
     
-    print(" - Backend: Executing buffered 'add' kernel" )
     C = PaperMatrix(output_path, A.shape, mode='w+')
     
     
@@ -33,6 +32,7 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
             # tile_A = A.data[r_start:r_end, c_start:c_end]
             # tile_B = B.data[r_start:r_end, c_start:c_end]
             if buffer_manager:
+                print(" - Backend: Executing buffered 'add' kernel" )
                 tile_A = buffer_manager.get_tile(A, r_start, c_start)
                 tile_B = buffer_manager.get_tile(B, r_start, c_start)
             else:
@@ -49,7 +49,7 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
     print("Addition complete.")
     return C
 
-def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
+def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
     """Performs out-of-core tiled matrix multiplication: C = A @ B."""
     if A.shape[1] != B.shape[0]:
         raise ValueError("Inner dimensions must match for multiplication.")
@@ -74,8 +74,15 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
                 k_end = min(k_start + TILE_SIZE, K)
 
                 # load the corresponding tiles from A and B
-                tile_A = A.data[r_start:r_end, k_start:k_end]
-                tile_B = B.data[k_start:k_end, c_start:c_end]
+                # tile_A = A.data[r_start:r_end, k_start:k_end]
+                # tile_B = B.data[k_start:k_end, c_start:c_end]
+                if buffer_manager:
+                    print(" - Backend: Executing buffered 'multiply' kernel" )
+                    tile_A = buffer_manager.get_tile(A, r_start, k_start)
+                    tile_B = buffer_manager.get_tile(B, k_start, c_start)
+                else:
+                    tile_A = A.data[r_start:r_end, k_start:k_end]
+                    tile_B = B.data[k_start:k_end, c_start:c_end]
 
                 #3. Perform in-memory multiplication and accumulate
                 tile_C += tile_A @ tile_B
@@ -89,17 +96,20 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str) -> PaperMatrix:
 
 # New parallel kernel
 
-def _process_fused_tile(A_data, B_data, scalar, r_start, r_end, c_start, c_end):
+def _process_fused_tile(A, B, scalar, r_start, r_end, c_start, c_end, buffer_manager: BufferManager):
     """Helper function to process a single tile. This is what each thread runs."""
-    # tile_A = A_data[r_start:r_end, c_start:c_end]
-    # tile_B = B_data[r_start:r_end, c_start:c_end]
-    tile_A = buffer_manager.get_tile(A_data, r_start, c_start)
-    tile_B = buffer_manager.get_tile(B_data, r_start, c_start)
+    
+    if buffer_manager:
+        tile_A = buffer_manager.get_tile(A, r_start, c_start)
+        tile_B = buffer_manager.get_tile(B, r_start, c_start)
+    else:
+        tile_A = A.data[r_start:r_end, c_start:c_end]
+        tile_B = B.data[r_start:r_end, c_start:c_end]
 
     fused_result_tile = (tile_A + tile_B) * scalar
     return r_start, c_start, fused_result_tile
 
-def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, output_path: str) -> PaperMatrix:
+def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
     """
     Performs the fused (A + B) * scalar operation in parallel.
     """
@@ -117,8 +127,9 @@ def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, ou
                 # submit() schedules the function to run and returns a Future object.
                 future = executor.submit(
                     _process_fused_tile,
-                    A.data, B.data, scalar,
-                    r_start, r_end, c_start, c_end
+                    A, B, scalar,
+                    r_start, r_end, c_start, c_end,
+                    buffer_manager
                 )
                 futures.append(future)
 

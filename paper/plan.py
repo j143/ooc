@@ -8,6 +8,8 @@ from .backend import execute_fused_add_multiply
 
 from .buffer import BufferManager
 
+use_buffer_manager = False  # Set to False to disable buffer manager
+
 class Plan:
     """Represents a computation that will result in a matrix, but is not yet executed."""
     def __init__(self, op):
@@ -115,7 +117,7 @@ class MultiplyScalarNode:
     def __repr__(self):
         return f"MultiplyScalarNode(left={self.left!r}, scalar={self.right})"
 
-    def execute(self, output_path):
+    def execute(self, output_path, buffer_manager):
         """This is our 'mini-optimizer'. It checks if it can use a fast, fused kernel."""
         # THE OPTIMIZATION RULE:
         # If my left input is an addition operation...
@@ -130,7 +132,8 @@ class MultiplyScalarNode:
                 matrix_A, # Matrix A
                 matrix_B, # Matrix B
                 self.right, # The scalar value
-                output_path
+                output_path,
+                buffer_manager
             )
         else:
             # Fallback to general case (non-fused)
