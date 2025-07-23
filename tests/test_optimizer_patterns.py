@@ -118,7 +118,7 @@ def test_fused_add_multiply():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_fused_add_mul.bin")
     start_time = time.time()
-    result_matrix = fused_plan.compute(result_path)
+    result_matrix, _ = fused_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Fused operation computation time: {end_time - start_time:.2f} seconds")
@@ -157,7 +157,7 @@ def test_fused_matmul_scalar():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_fused_matmul_scalar.bin")
     start_time = time.time()
-    result_matrix = fused_plan.compute(result_path)
+    result_matrix, _ = fused_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Fused operation computation time: {end_time - start_time:.2f} seconds")
@@ -202,7 +202,7 @@ def test_fused_add_matmul():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_fused_add_matmul.bin")
     start_time = time.time()
-    result_matrix = fused_plan.compute(result_path)
+    result_matrix, _ = fused_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Fused operation computation time: {end_time - start_time:.2f} seconds")
@@ -239,7 +239,7 @@ def test_fused_double_scalar():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_fused_double_scalar.bin")
     start_time = time.time()
-    result_matrix = fused_plan.compute(result_path)
+    result_matrix, _ = fused_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Fused operation computation time: {end_time - start_time:.2f} seconds")
