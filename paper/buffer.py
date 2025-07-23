@@ -34,11 +34,11 @@ class BufferManager:
                 # --- cache hit ---
                 # Mark as most recently used
                 self.lru_tracker.move_to_end(tile_key)
-                self.event_log.append((current_time, 'HIT', tile_key))
+                self.event_log.append((current_time, 'HIT', tile_key, len(self.cache)))
                 return self.cache[tile_key]
         
         # --- Cache miss ---
-        self.event_log.append((current_time, 'MISS', tile_key))
+        self.event_log.append((current_time, 'MISS', tile_key, len(self.cache)))
         # load from disk (outside the lock to allow concurrent I/O);
         r_end = min(r_start + TILE_SIZE, matrix.shape[0])
         c_end = min(c_start + TILE_SIZE, matrix.shape[1])
@@ -60,7 +60,7 @@ class BufferManager:
                 lru_key, _ = self.lru_tracker.popitem(last=False)
                 del self.cache[lru_key]
                 # log the eviction event
-                self.event_log.append((current_time, 'EVICT', lru_key))
+                self.event_log.append((current_time, 'EVICT', lru_key, len(self.cache)))
             
         return tile_data
 
