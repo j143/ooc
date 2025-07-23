@@ -142,7 +142,7 @@ class MultiplyScalarNode:
             # Fallback to general case (non-fused)
             print("Optimizer: No fusion pattern detected. Executing step-by-step.")
             # 1. Compute the input matrix first
-            TMP = self.left.compute(output_path + ".tmp")
+            TMP, _ = self.left.compute(output_path + ".tmp")
             # 2. Then, perform the scalar multiplication
             C = PaperMatrix(output_path, self.shape, mode='w+')
             for r in range(0, self.shape[0], TILE_SIZE):

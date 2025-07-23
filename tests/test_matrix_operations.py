@@ -112,7 +112,7 @@ def test_matrix_addition():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_addition.bin")
     start_time = time.time()
-    result_matrix = addition_plan.compute(result_path)
+    result_matrix, _ = addition_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Addition computation time: {end_time - start_time:.2f} seconds")
@@ -147,7 +147,7 @@ def test_fused_add_multiply():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_fused.bin")
     start_time = time.time()
-    result_matrix = fused_plan.compute(result_path)
+    result_matrix, _ = fused_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Fused operation computation time: {end_time - start_time:.2f} seconds")
@@ -180,7 +180,7 @@ def test_scalar_multiply():
     # Execute the plan
     result_path = os.path.join(TEST_DATA_DIR, "result_scalar_mul.bin")
     start_time = time.time()
-    result_matrix = scalar_plan.compute(result_path)
+    result_matrix, _ = scalar_plan.compute(result_path)
     end_time = time.time()
     
     print(f"Scalar multiplication computation time: {end_time - start_time:.2f} seconds")
