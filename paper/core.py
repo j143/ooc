@@ -31,12 +31,28 @@ class PaperMatrix:
         r_end = min(r_start + TILE_SIZE, self.shape[0])
         c_end = min(c_start + TILE_SIZE, self.shape[1])
 
-        # 1. Slice the rows, which returns a view
-        row_view = self.data[r_start:r_end]
-        # 2. Immediately copy this view into a new, concrete in-memory array
-        in_memory_rows = np.array(row_view, copy=True)  # Ensure we have a copy in memory
-        # 3. Now, slice the columns from the clean, in-memory array
-        tile = in_memory_rows[:, 0:(c_end - c_start)]
+        # # 1. Slice the rows, which returns a view
+        # row_view = self.data[r_start:r_end]
+        # # 2. Immediately copy this view into a new, concrete in-memory array
+        # in_memory_rows = np.array(row_view, copy=True)  # Ensure we have a copy in memory
+        # # 3. Now, slice the columns from the clean, in-memory array
+        # tile = in_memory_rows[:, 0:(c_end - c_start)]
+        # return tile
+        # r_end = min(r_start + TILE_SIZE, self.shape[0])
+        # c_end = min(c_start + TILE_SIZE, self.shape[1])
+
+        # Create the destination tile array with the final, correct shape.
+        tile_shape = (r_end - r_start, c_end - c_start)
+        tile = np.empty(tile_shape, dtype=self.dtype)
+
+        # Read the data row by row from the memmap object into the tile.
+        # This avoids creating a large intermediate copy of all rows.
+        for i in range(tile_shape[0]):
+            # Get a view of a single row from the memmap
+            row_view = self.data[r_start + i]
+            # Slice the required columns from that row and place it in our tile
+            tile[i, :] = row_view[c_start:c_end]
+            
         return tile
 
 
