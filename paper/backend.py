@@ -10,6 +10,14 @@ from .buffer import BufferManager, TILE_SIZE
 
 buffer_manager = BufferManager(max_cache_size_tiles=64)
 
+def _create_empty_file(filepath, shape, dtype):
+    """Helper to create an empty file of the correct size for writing."""
+    with open(filepath, "wb") as f:
+        file_size = shape[0] * shape[1] * np.dtype(dtype).itemsize
+        if file_size > 0:
+            f.seek(file_size - 1)
+            f.write(b'\0')
+
 def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
     """
     Performs out-of-core matrix addition: C = A + B using the provided 
@@ -17,37 +25,45 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
     if A.shape != B.shape:
         raise ValueError("Matrices must have the same shape for addition.")
     
-    C = PaperMatrix(output_path, A.shape, mode='w+')
-    
+    # C = PaperMatrix(output_path, A.shape, mode='w+')
+    _create_empty_file(output_path, A.shape, A.dtype)
     
     # loop now uses the buffer manager for all data reads
     rows, cols = A.shape
     # Iterate through the matrices tile by tile
-    for r_start in range(0, rows, TILE_SIZE):
-        r_end = min(r_start + TILE_SIZE, rows)
-        for c_start in range(0, cols, TILE_SIZE):
-            c_end = min(c_start + TILE_SIZE, cols)
-            
-            # 1. Read tiles from A and B into memory
-            # tile_A = A.data[r_start:r_end, c_start:c_end]
-            # tile_B = B.data[r_start:r_end, c_start:c_end]
-            if buffer_manager:
-                print(" - Backend: Executing buffered 'add' kernel" )
-                tile_A = buffer_manager.get_tile(A, r_start, c_start)
-                tile_B = buffer_manager.get_tile(B, r_start, c_start)
-            else:
-                tile_A = A.data[r_start:r_end, c_start:c_end]
-                tile_B = B.data[r_start:r_end, c_start:c_end]
-            
-            # 2. Compute the result in memory
-            tile_C = tile_A + tile_B
-            
-            # 3. Write the resulting tile to C's file
-            C.data[r_start:r_end, c_start:c_end] = tile_C
+    with open(output_path, "r+b") as f_out:
+        for r_start in range(0, rows, TILE_SIZE):
+            r_end = min(r_start + TILE_SIZE, rows)
+            for c_start in range(0, cols, TILE_SIZE):
+                c_end = min(c_start + TILE_SIZE, cols)
+                
+                # 1. Read tiles from A and B into memory
+                # tile_A = A.data[r_start:r_end, c_start:c_end]
+                # tile_B = B.data[r_start:r_end, c_start:c_end]
+                if buffer_manager:
+                    print(" - Backend: Executing buffered 'add' kernel" )
+                    tile_A = buffer_manager.get_tile(A, r_start, c_start)
+                    tile_B = buffer_manager.get_tile(B, r_start, c_start)
+                else:
+                    tile_A = A.data[r_start:r_end, c_start:c_end]
+                    tile_B = B.data[r_start:r_end, c_start:c_end]
+                
+                # 2. Compute the result in memory
+                # tile_C = tile_A + tile_B
+                
+                # 3. Write the resulting tile to C's file
+                # C.data[r_start:r_end, c_start:c_end] = tile_C
+        
+        
+                result_tile = (tile_A + tile_B).astype(A.dtype)
+
+                # Write the tile row by row to handle non-contiguous writes
+                for i in range(result_tile.shape[0]):
+                    row_offset = ((r_start + i) * A.shape[1] + c_start) * A.dtype.itemsize
+                    f_out.seek(row_offset)
+                    f_out.write(result_tile[i, :].tobytes())
     
-    C.data.flush() # Ensure all data is saved to disk
-    print("Addition complete.")
-    return C
+    return PaperMatrix(output_path, A.shape, mode='r')
 
 def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
     """Performs out-of-core tiled matrix multiplication: C = A @ B."""
