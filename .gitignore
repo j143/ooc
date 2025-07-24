@@ -6,3 +6,4 @@ __pycache__/
 data/
 test_data*
 benchmark_data/
+visualize_data*
