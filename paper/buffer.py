@@ -5,7 +5,7 @@ import time
 
 import numpy as np
 
-TILE_SIZE = 1000
+TILE_SIZE = 1024
 
 class BufferManager:
     """
