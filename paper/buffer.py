@@ -23,6 +23,37 @@ class BufferManager:
         # -- New Logging Attribute --
         # (timestamp, event_type, tile_key)
         self.event_log = []
+    
+    def _evict_lru(self):
+        """
+        Evicts the least recently used tile
+        """
+        lru_key, _ = self.lru_tracker.popitem(last=False)
+        del self.cache[lru_key]
+        # log the eviction event
+        self.event_log.append((current_time, 'EVICT', lru_key, len(self.cache)))
+    
+    def _evict_optimal(self):
+        """
+        Belady's algorithm
+        Evicts the tile whose next use is furthest in the future according to the I/O trace.
+        """
+        future_trace = self.io_trace[self.trace_pos:]
+        distances = {}
+        for tile_key in self.cache:
+            try:
+                # Find the next distance when this tile is needed
+                distance = future_trace.index(tile_key)
+                distances[tile_key] = distance
+            except ValueError:
+                # This tail is never used again, candidate for eviction!
+                distances[tile_key] = float('inf')
+        
+        # Evict the tile with the largest distance to its next use
+        evict_key = max(distances, key=distances.get)
+        del self.cache[evict_key]
+        del self.lru_tracker[evict_key]
+        self.event_log.append((time.perf_counter(), 'EVICT', evict_key, len(self.cache)))
 
     def get_tile(self, matrix: PaperMatrix, r_start: int, c_start: int):
         """
@@ -69,10 +100,10 @@ class BufferManager:
 
             # If cache is over capacity, evict the least recently used tile
             if len(self.cache) > self.max_size:
-                lru_key, _ = self.lru_tracker.popitem(last=False)
-                del self.cache[lru_key]
-                # log the eviction event
-                self.event_log.append((current_time, 'EVICT', lru_key, len(self.cache)))
+                if self.io_trace:
+                    self._evict_optimal()
+                else:
+                    self._evict_lru()
             
         return tile_data
 
