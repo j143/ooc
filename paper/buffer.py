@@ -14,6 +14,8 @@ class BufferManager:
     """
     def __init__(self, max_cache_size_tiles: int = 64):
         self.max_size = max_cache_size_tiles
+        self.io_trace = io_trace
+        self.trace_pos = 0
         self.cache = {} # Stores tile data: (matrix_path, r, c) -> numpy_tile
         self.lru_tracker = collections.OrderedDict() # Keeps track of usage order
         self.lock = threading.Lock() # Ensure thread-safe access to the cache
@@ -30,6 +32,10 @@ class BufferManager:
         current_time = time.perf_counter()
 
         with self.lock:
+            # Increment trace position regardless of hit / miss
+            if self.io_trace:
+                self.trace_pos += 1
+
             if tile_key in self.cache:
                 # --- cache hit ---
                 # Mark as most recently used
@@ -38,10 +44,12 @@ class BufferManager:
                 return self.cache[tile_key]
         
         # --- Cache miss ---
-        self.event_log.append((current_time, 'MISS', tile_key, len(self.cache)))
+        with self.lock:
+            self.event_log.append((current_time, 'MISS', tile_key, len(self.cache)))
+        
         # load from disk (outside the lock to allow concurrent I/O);
-        r_end = min(r_start + TILE_SIZE, matrix.shape[0])
-        c_end = min(c_start + TILE_SIZE, matrix.shape[1])
+        # r_end = min(r_start + TILE_SIZE, matrix.shape[0])
+        # c_end = min(c_start + TILE_SIZE, matrix.shape[1])
 
         # Perform slicing in two steps as multi-dimensional slicing on memmap is not implemented
         # tile_data = matrix.data[r_start:r_end, c_start:c_end]
@@ -50,6 +58,10 @@ class BufferManager:
         # tile_data = row_slice[:, 0:(c_end - c_start)] # is this 0:(c_end - c_start) or c_start:c_end?
 
         with self.lock:
+            if tile_key in self.cache:
+                self.lru_tracker.move_to_end(tile_key)
+                return self.cache[tile_key]
+
             # Add the new tile to the cache
             self.cache[tile_key] = tile_data
             self.lru_tracker[tile_key] = None
