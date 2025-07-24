@@ -12,7 +12,7 @@ class BufferManager:
     Manages on in-memory cache of matrix tiles to reduce disk I/O.
     Thread-safe LRU policy
     """
-    def __init__(self, max_cache_size_tiles: int = 64):
+    def __init__(self, max_cache_size_tiles: int = 64, io_trace: list = None):
         self.max_size = max_cache_size_tiles
         self.io_trace = io_trace
         self.trace_pos = 0
@@ -31,7 +31,7 @@ class BufferManager:
         lru_key, _ = self.lru_tracker.popitem(last=False)
         del self.cache[lru_key]
         # log the eviction event
-        self.event_log.append((current_time, 'EVICT', lru_key, len(self.cache)))
+        self.event_log.append((time.perf_counter(), 'EVICT', lru_key, len(self.cache)))
     
     def _evict_optimal(self):
         """
