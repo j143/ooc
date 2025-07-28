@@ -23,6 +23,7 @@ class Plan:
         from .optimizer import generate_io_trace
 
         io_trace = generate_io_trace(self)
+        print(f"io_trace: {io_trace}")
         buffer_manager = None
         if use_buffer_manager:
             buffer_manager = BufferManager(max_cache_size_tiles=64, io_trace=io_trace)
@@ -48,7 +49,7 @@ class Plan:
 
     def __mul__(self, x):
         if isinstance(x, (int, float)):
-            return Plan(MultiplyScalarNode(self, x))
+            return Plan(MultiplyScalarNode(self.op, x))
         raise NotImplementedError("Only scalar multiplication is supported.")
     
     def __rmul__(self, x):
@@ -87,8 +88,8 @@ class AddNode:
         """Executes the addition plan."""
         print(" - Execute AddNode: Get inputs...")
         # Create temporary paths for intermediate results if needed
-        matrix_A = self.left.op.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
-        matrix_B = self.right.op.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
+        matrix_A = self.left.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
+        matrix_B = self.right.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
 
         print(" - Calling 'add' to perform the computation...")
         return add(matrix_A, matrix_B, output_path, buffer_manager)
@@ -135,8 +136,8 @@ class MultiplyScalarNode:
             # ...then call the special fused execution function
             add_op = self.left.op
             # Get the actual matrix handles from the eager nodes
-            matrix_A = add_op.left.op.execute(None if output_path is None else output_path + ".fused.A.tmp", buffer_manager)
-            matrix_B = add_op.right.op.execute(None if output_path is None else output_path + ".fused.B.tmp", buffer_manager)
+            matrix_A = add_op.left.execute(None if output_path is None else output_path + ".fused.A.tmp", buffer_manager)
+            matrix_B = add_op.right.execute(None if output_path is None else output_path + ".fused.B.tmp", buffer_manager)
             return execute_fused_add_multiply(
                 matrix_A, # Matrix A
                 matrix_B, # Matrix B
