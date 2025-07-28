@@ -110,8 +110,8 @@ class MultiplyNode:
         """Executes the multiplication plan."""
         print(" - Execute MultiplyNode: Get inputs...")
         # Create temporary paths for intermediate results if needed
-        matrix_A = self.left.op.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
-        matrix_B = self.right.op.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
+        matrix_A = self.left.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
+        matrix_B = self.right.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
 
         print(" - Calling 'multiply' to perform the computation...")
         return multiply(matrix_A, matrix_B, output_path, buffer_manager)

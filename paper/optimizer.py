@@ -1,5 +1,7 @@
 # --- Purpose: To inspect a plan and choose the best execution strategy. ---
 
+import os
+
 from . import backend
 from .plan import Plan, EagerNode, AddNode, MultiplyNode, MultiplyScalarNode
 
@@ -18,6 +20,8 @@ def _generate_trace_recursive(op_node):
     """
     A recursive helper to generate the I/O trace for a plan node.
     """
+    print("inside _generate_trace_recursive function")
+    print(f"op_node: {op_node}")
     if isinstance(op_node, EagerNode):
         # Eager nodes are leaves; so, doesn't have preceding operations
         return []
@@ -50,7 +54,9 @@ def generate_io_trace(plan: Plan) -> list:
     """
     print("Optimizer: Generating I/O trace for optimal caching...")
 
-    trace = _generate_trace_recursive(plan.op_node)
+    print(plan)
+
+    trace = _generate_trace_recursive(plan.op)
     return [(os.path.basename(path), r, c) for path, r, c in trace]
 
 
