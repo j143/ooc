@@ -27,13 +27,26 @@ def _generate_trace_recursive(op_node):
         return []
     
     # Recursively find the trace for the inputs
-    left_trace = _generate_trace_recursive(op_node.left)
+    left_trace = []
+    if hasattr(op_node, 'left'):
+        left_trace = _generate_trace_recursive(op_node.left)
     right_trace = []
     if hasattr(op_node, 'right'):
         right_trace = _generate_trace_recursive(op_node.right)
     
     # Trace for the current kernel operation
     kernel_trace = []
+    
+    def find_leaf_matrices(node):
+        if isinstance(node, EagerNode):
+            return [node.matrix]
+        leaves = []
+        if hasattr(node, 'left'):
+            leaves.extend(find_leaf_matrices(node.left))
+        if hasattr(node, 'right'):
+            leaves.extend(find_leaf_matrices(node.right))
+        return leaves
+
     if isinstance(op_node, MultiplyNode):
         A = op_node.left.matrix
         B = op_node.right.matrix
@@ -44,6 +57,16 @@ def _generate_trace_recursive(op_node):
                 for k_start in range(0, A.shape[1], TILE_SIZE):
                     kernel_trace.append((A.filepath, r_start, k_start))
                     kernel_trace.append((B.filepath, k_start, c_start))
+    
+    elif isinstance(op_node, AddNode):
+        left_leaves = find_leaf_matrices(op_node.left)
+        right_leaves = find_leaf_matrices(op_node.right)
+        if len(left_leaves) == 1 and len(right_leaves) == 1:
+            A, B = left_leaves[0], right_leaves[0]
+            for r_start in range(0, A.shape[0], TILE_SIZE):
+                for c_start in range(0, A.shape[1], TILE_SIZE):
+                    kernel_trace.append((os.path.basename(A.filepath), r_start, c_start))
+                    kernel_trace.append((os.path.basename(B.filepath), r_start, c_start))
     
     return left_trace + right_trace + kernel_trace
 
