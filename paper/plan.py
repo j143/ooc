@@ -19,9 +19,13 @@ class Plan:
     
     def compute(self, output_path):
         """Triggers the execution of the entire computation plan."""
+        
+        from .optimizer import generate_io_trace
+
+        io_trace = generate_io_trace(self)
         buffer_manager = None
         if use_buffer_manager:
-            buffer_manager = BufferManager(max_cache_size_tiles=64)
+            buffer_manager = BufferManager(max_cache_size_tiles=64, io_trace=io_trace)
         else:
             print(" - No buffer manager used. Will read/write directly to disk.")
         
@@ -34,11 +38,13 @@ class Plan:
 
     def __add__(self, x: 'Plan'):
         print("Build an 'AddNode' plan...")
-        return Plan(AddNode(self, x))
+        # return Plan(AddNode(self, x))
+        return Plan(AddNode(self.op, x.op))
     
     def __matmul__(self, x: 'Plan'):
         print("Build an 'MultiplyNode' plan")
-        return Plan(MultiplyNode(self, x))
+        # return Plan(MultiplyNode(self, x))
+        return Plan(MultiplyNode(self.op, x.op))
 
     def __mul__(self, x):
         if isinstance(x, (int, float)):
