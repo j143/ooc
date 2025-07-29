@@ -64,7 +64,7 @@ class EagerNode:
         self.shape = matrix.shape
 
     def __repr__(self):
-        return f"EagerNode(path='{self.matrix.filepath})"
+        return f"EagerNode(path='{self.matrix.filepath}')"
     
     def execute(self, path, buffer_manager):
         """Executing a leaf node simply means returning the handle to the existing matrix."""
@@ -131,10 +131,11 @@ class MultiplyScalarNode:
         """This is our 'mini-optimizer'. It checks if it can use a fast, fused kernel."""
         # THE OPTIMIZATION RULE:
         # If my left input is an addition operation...
-        if isinstance(self.left.op, AddNode):
+        print("what's the self.left here?", self.left)
+        if isinstance(self.left, AddNode):
             print("Optimizer: Fused Add-Multiply pattern detected! Calling fast kernel.")
             # ...then call the special fused execution function
-            add_op = self.left.op
+            add_op = self.left
             # Get the actual matrix handles from the eager nodes
             matrix_A = add_op.left.execute(None if output_path is None else output_path + ".fused.A.tmp", buffer_manager)
             matrix_B = add_op.right.execute(None if output_path is None else output_path + ".fused.B.tmp", buffer_manager)
@@ -149,7 +150,7 @@ class MultiplyScalarNode:
             # Fallback to general case (non-fused)
             print("Optimizer: No fusion pattern detected. Executing step-by-step.")
             # 1. Compute the input matrix first
-            TMP, _ = self.left.compute(output_path + ".tmp")
+            TMP = self.left.execute(output_path + ".tmp", buffer_manager)
             # 2. Then, perform the scalar multiplication
             C = PaperMatrix(output_path, self.shape, mode='w+')
             for r in range(0, self.shape[0], TILE_SIZE):
