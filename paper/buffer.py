@@ -63,15 +63,15 @@ class BufferManager:
         current_time = time.perf_counter()
 
         with self.lock:
-            # Increment trace position regardless of hit / miss
-            if self.io_trace:
-                self.trace_pos += 1
 
             if tile_key in self.cache:
                 # --- cache hit ---
                 # Mark as most recently used
                 self.lru_tracker.move_to_end(tile_key)
                 self.event_log.append((current_time, 'HIT', tile_key, len(self.cache)))
+                
+                if self.io_trace:
+                    self.trace_pos += 1
                 return self.cache[tile_key]
         
         # --- Cache miss ---
@@ -104,6 +104,9 @@ class BufferManager:
                     self._evict_optimal()
                 else:
                     self._evict_lru()
+            
+            if self.io_trace:
+                    self.trace_pos += 1
             
         return tile_data
 

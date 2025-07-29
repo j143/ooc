@@ -36,7 +36,7 @@ def _generate_trace_recursive(op_node):
     
     # Trace for the current kernel operation
     kernel_trace = []
-    
+
     def find_leaf_matrices(node):
         if isinstance(node, EagerNode):
             return [node.matrix]
@@ -48,15 +48,22 @@ def _generate_trace_recursive(op_node):
         return leaves
 
     if isinstance(op_node, MultiplyNode):
-        A = op_node.left.matrix
-        B = op_node.right.matrix
-        C_shape = (A.shape[0], B.shape[1])
-        # simulate the backend.multiply kernel's access pattern
-        for r_start in range(0, C_shape[0], TILE_SIZE):
-            for c_start in range(0, C_shape[1], TILE_SIZE):
-                for k_start in range(0, A.shape[1], TILE_SIZE):
-                    kernel_trace.append((A.filepath, r_start, k_start))
-                    kernel_trace.append((B.filepath, k_start, c_start))
+        left_leaves = find_leaf_matrices(op_node.left)
+        right_leaves = find_leaf_matrices(op_node.right)
+        
+        A_shape = op_node.left.shape
+        B_shape = op_node.right.shape
+        C_shape = (A_shape[0], B_shape[1])
+
+        # This assumes for A@B, A comes from left leaves and B from right leaves.
+        if left_leaves and right_leaves:
+            A_matrix = left_leaves[0]
+            B_matrix = right_leaves[0]
+            for r_start in range(0, C_shape[0], TILE_SIZE):
+                for c_start in range(0, C_shape[1], TILE_SIZE):
+                    for k_start in range(0, A_shape[1], TILE_SIZE):
+                        kernel_trace.append((os.path.basename(A_matrix.filepath), r_start, k_start))
+                        kernel_trace.append((os.path.basename(B_matrix.filepath), k_start, c_start))
     
     elif isinstance(op_node, AddNode):
         left_leaves = find_leaf_matrices(op_node.left)
@@ -68,6 +75,14 @@ def _generate_trace_recursive(op_node):
                     kernel_trace.append((os.path.basename(A.filepath), r_start, c_start))
                     kernel_trace.append((os.path.basename(B.filepath), r_start, c_start))
     
+    elif isinstance(op_node, MultiplyScalarNode):
+        left_leaves = find_leaf_matrices(op_node.left)
+        if len(left_leaves) == 1:
+            A = left_leaves[0]
+            for r_start in range(0, A.shape[0], TILE_SIZE):
+                for c_start in range(0, A.shape[1], TILE_SIZE):
+                    kernel_trace.append((os.path.basename(A.filepath), r_start, c_start))
+
     return left_trace + right_trace + kernel_trace
 
 def generate_io_trace(plan: Plan) -> list:
