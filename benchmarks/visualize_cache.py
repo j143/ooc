@@ -18,10 +18,22 @@ from benchmarks.utils import Benchmark
 
 # --- Visualization Configuration ---
 VIS_DATA_DIR = "visualize_data"
-# Use smaller matrices for a clearer, less cluttered visualization
-SHAPE = (4096, 4096)
-# Use a small cache size to force misses and evictions, making the graph interesting
-CACHE_SIZE_TILES = 16
+
+# Configuration presets for different analysis scenarios
+SCENARIOS = {
+    "fast_test": {"shape": (4096, 4096), "cache_size": 64},
+    "standard": {"shape": (8192, 8192), "cache_size": 128}, 
+    "large_analysis": {"shape": (16384, 16384), "cache_size": 256},
+    "eviction_stress": {"shape": (8192, 8192), "cache_size": 32}  # Force evictions
+}
+
+# Choose scenario
+SCENARIO = "eviction_stress"  # Change to "fast_test", "large_analysis", or "eviction_stress"
+config = SCENARIOS[SCENARIO]
+SHAPE = config["shape"]
+CACHE_SIZE_TILES = config["cache_size"]
+
+print(f"Using scenario '{SCENARIO}': {SHAPE} matrix, {CACHE_SIZE_TILES} tile cache")
 
 def visualize_matrix_multiplication():
     """
@@ -47,18 +59,43 @@ def visualize_matrix_multiplication():
     
     matmul_plan = plan_A @ plan_B
     
+    print(f"Matrix size: {SHAPE}")
+    print(f"Estimated tiles per matrix: {(SHAPE[0]//TILE_SIZE) * (SHAPE[1]//TILE_SIZE)}")
+    print(f"Cache size: {CACHE_SIZE_TILES} tiles")
     print("Executing A @ B to generate cache event log...")
+    
+    start_time = time.time()
     # The compute method now returns the buffer manager instance
     result_matrix, buffer_manager = matmul_plan.compute(
         os.path.join(VIS_DATA_DIR, "C_result.bin")
     )
-    print("Execution complete.")
+    elapsed = time.time() - start_time
+    print(f"Execution completed in {elapsed:.1f} seconds")
 
     # --- 3. Process the Event Log ---
     log = buffer_manager.get_log()
     if not log:
         print("Event log is empty. Nothing to visualize.")
         return
+
+    # Analyze event types for debugging
+    event_counts = {}
+    for event in log:
+        event_type = event[1]
+        event_counts[event_type] = event_counts.get(event_type, 0) + 1
+    
+    print(f"\nEvent Log Analysis:")
+    print(f"Total events: {len(log)}")
+    for event_type, count in event_counts.items():
+        percentage = (count / len(log)) * 100
+        print(f"  {event_type}: {count} ({percentage:.1f}%)")
+    
+    # For large logs, sample for visualization performance
+    if len(log) > 10000:
+        sample_size = 10000
+        step = len(log) // sample_size
+        log = log[::step]
+        print(f"Sampled {len(log)} events for visualization")
 
     # --- Generate the Multi-Plot visualization
     print("Generating advanced cache visualizations...")
@@ -82,37 +119,61 @@ def visualize_matrix_multiplication():
     hit_x, hit_y = zip(*events['HIT']) if events['HIT'] else ([], [])
     ax1.scatter(hit_x, hit_y, c='green', s=20, label='Cache Hit', zorder=3)
     evict_x, evict_y = zip(*events['EVICT']) if events['EVICT'] else ([], [])
-    ax1.scatter(evict_x, evict_y, c='blue', marker='x', s=30, label='Eviction', zorder=4)
+    if evict_x:  # Only plot if evictions exist
+        ax1.scatter(evict_x, evict_y, c='blue', marker='x', s=50, label='Eviction', zorder=4)
+        print(f"Plotted {len(evict_x)} eviction events")
+    else:
+        print("No eviction events found - cache may be sized perfectly or eviction logic missing")
+    
     ax1.set_title(f'1. Cache Access Pattern Timeline (Cache Size: {CACHE_SIZE_TILES} tiles)')
     ax1.set_xlabel('Operation Index (Time)')
     ax1.set_ylabel('Unique Tile ID')
     ax1.legend()
     ax1.grid(True, linestyle='--', alpha=0.6)
 
+    # Add rolling hit rate as secondary y-axis
+    ax1_twin = ax1.twinx()
+    window_size = max(50, len(log) // 100)  # Adaptive window size
+    hit_rates = []
+    for i in range(len(log)):
+        window_start = max(0, i - window_size)
+        window_events = log[window_start:i+1]
+        hits = sum(1 for event in window_events if event[1] == 'HIT')
+        hit_rate = hits / len(window_events) if window_events else 0
+        hit_rates.append(hit_rate)
+    
+    ax1_twin.plot(range(len(log)), hit_rates, 'purple', alpha=0.7, linewidth=2, label='Rolling Hit Rate')
+    ax1_twin.set_ylabel('Rolling Hit Rate', color='purple')
+    ax1_twin.set_ylim(0, 1)
+    ax1_twin.tick_params(axis='y', labelcolor='purple')
+
     # Set y-ticks to be more readable if there are not too many tiles
     if len(tile_keys) < 30:
-        ax.set_yticks(range(len(tile_keys)))
-        ax.set_yticklabels([f"{name}[{r},{c}]" for name, r, c in tile_keys], rotation=0, fontsize=8)
+        ax1.set_yticks(range(len(tile_keys)))
+        ax1.set_yticklabels([f"{name}[{r},{c}]" for name, r, c in tile_keys], rotation=0, fontsize=8)
 
-    # # --- Plot 2: Static Tile Access Heatmap ---
+    # # --- Plot 2: Improved Tile Access Heatmap ---
     ax2 = axes[1]
     access_counts = Counter(event[2] for event in log if event[1] in ['HIT', 'MISS'])
     max_row_idx = SHAPE[0] // TILE_SIZE
     max_col_idx = SHAPE[1] // TILE_SIZE
-    heatmap_A = np.zeros((max_row_idx, max_col_idx))
-    heatmap_B = np.zeros((max_row_idx, max_col_idx))
+    heatmap_combined = np.zeros((max_row_idx, max_col_idx))
 
     for (name, r, c), count in access_counts.items():
         r_idx, c_idx = r // TILE_SIZE, c // TILE_SIZE
-        if name == 'A.bin':
-            heatmap_A[r_idx, c_idx] = count
-        elif name == 'B.bin':
-            heatmap_B[r_idx, c_idx] = count
+        heatmap_combined[r_idx, c_idx] += count
     
-    im = ax2.imshow(heatmap_A + heatmap_B, cmap='hot', interpolation='nearest')
-    ax2.set_title('2. Static Tile Access Heatmap (Total Hits + Misses)')
+    # Use viridis palette and add tile boundaries
+    im = ax2.imshow(heatmap_combined, cmap='viridis', interpolation='nearest')
+    ax2.set_title('2. Tile Access Frequency Heatmap (1024x1024 tiles)')
     ax2.set_xlabel('Tile Column Index')
     ax2.set_ylabel('Tile Row Index')
+    
+    # Add grid lines to show tile boundaries
+    ax2.set_xticks(np.arange(-0.5, max_col_idx, 1), minor=True)
+    ax2.set_yticks(np.arange(-0.5, max_row_idx, 1), minor=True)
+    ax2.grid(which='minor', color='white', linestyle='-', linewidth=0.5, alpha=0.7)
+    
     fig.colorbar(im, ax=ax2, label='Access Count')
 
     # --- Plot 3: Cache Occupancy Over Time ---
