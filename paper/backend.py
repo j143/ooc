@@ -5,10 +5,11 @@ import numpy as np
 import os
 from .core import PaperMatrix
 from concurrent.futures import ThreadPoolExecutor
+from .config import TILE_SIZE, DEFAULT_CACHE_SIZE_TILES
 
-from .buffer import BufferManager, TILE_SIZE
+from .buffer import BufferManager
 
-buffer_manager = BufferManager(max_cache_size_tiles=64)
+buffer_manager = BufferManager(max_cache_size_tiles=DEFAULT_CACHE_SIZE_TILES)
 
 def _create_empty_file(filepath, shape, dtype):
     """Helper to create an empty file of the correct size for writing."""

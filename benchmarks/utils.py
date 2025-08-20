@@ -9,9 +9,9 @@ import psutil
 # Add the project root to the Python path to allow importing 'paper'
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from paper.core import PaperMatrix
+from paper.config import TILE_SIZE
 
 # --- Configuration ---
-TILE_SIZE = 1024
 
 def create_matrix_file(filepath, shape, fill_value=None, tile_size=TILE_SIZE):
     """Creates and saves a matrix file, centralizing data creation."""

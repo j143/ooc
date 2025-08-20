@@ -13,9 +13,9 @@ import shutil
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from paper import PaperMatrix, Plan, EagerNode
+from paper.config import TILE_SIZE
 
 # --- Configuration ---
-TILE_SIZE = 1000  # The dimension of the square tiles to process in memory
 TEST_DATA_DIR = "test_data_optimizer"  # Directory to store test matrix files
 
 def setup():
