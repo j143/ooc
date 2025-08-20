@@ -3,8 +3,8 @@
 from .backend import add
 from .backend import multiply
 from .core import PaperMatrix
-from .backend import TILE_SIZE
 from .backend import execute_fused_add_multiply
+from .config import TILE_SIZE, DEFAULT_CACHE_SIZE_TILES
 
 from .buffer import BufferManager
 
@@ -26,7 +26,7 @@ class Plan:
         print(f"io_trace: {io_trace}")
         buffer_manager = None
         if use_buffer_manager:
-            buffer_manager = BufferManager(max_cache_size_tiles=64, io_trace=io_trace)
+            buffer_manager = BufferManager(max_cache_size_tiles=DEFAULT_CACHE_SIZE_TILES, io_trace=io_trace)
         else:
             print(" - No buffer manager used. Will read/write directly to disk.")
         
@@ -131,7 +131,6 @@ class MultiplyScalarNode:
         """This is our 'mini-optimizer'. It checks if it can use a fast, fused kernel."""
         # THE OPTIMIZATION RULE:
         # If my left input is an addition operation...
-        print("what's the self.left here?", self.left)
         if isinstance(self.left, AddNode):
             print("Optimizer: Fused Add-Multiply pattern detected! Calling fast kernel.")
             # ...then call the special fused execution function

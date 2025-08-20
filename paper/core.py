@@ -3,8 +3,7 @@
 
 import numpy as np
 import os
-
-TILE_SIZE = 1024  # Size of the tile for out-of-core operations
+from .config import TILE_SIZE
 
 class PaperMatrix:
     """

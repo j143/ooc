@@ -2,9 +2,9 @@ import numpy as np
 import os
 import time
 from paper import PaperMatrix, Plan, EagerNode
+from paper.config import TILE_SIZE
 
 # --- Configuration ---
-TILE_SIZE = 1000  # The dimension of the square tiles to process in memory
 DATA_DIR = "data" # Directory to store large matrix files
 
 def create_random_matrix(filepath, shape):
@@ -70,8 +70,6 @@ def main():
     end_time = time.time()
 
     print(f"\nExecution finished in {end_time - start_time:.2f} seconds.")
-
-    A_handle.close()
 
     result_file_path = os.path.join(DATA_DIR, "M_lazy_add.bin")
     start_time = time.time()
