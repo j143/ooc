@@ -61,3 +61,11 @@ python ./tests/run_tests.py scalar
 
 
 ![Buffer manager architecture](/buffer-manager-architecture.svg "Buffer Manager")
+
+
+### Results
+
+![fast test](/cache_visualization_fast_test.png "Buffer Manager")
+
+![Standard](/cache_visualization_standard.png "Buffer Manager")
+
