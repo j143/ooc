@@ -28,7 +28,7 @@ SCENARIOS = {
 }
 
 # Choose scenario
-SCENARIO = "eviction_stress"  # Change to "fast_test", "large_analysis", or "eviction_stress"
+SCENARIO = "large_analysis"  # Change to "fast_test", "large_analysis", or "eviction_stress"
 config = SCENARIOS[SCENARIO]
 SHAPE = config["shape"]
 CACHE_SIZE_TILES = config["cache_size"]
@@ -67,7 +67,8 @@ def visualize_matrix_multiplication():
     start_time = time.time()
     # The compute method now returns the buffer manager instance
     result_matrix, buffer_manager = matmul_plan.compute(
-        os.path.join(VIS_DATA_DIR, "C_result.bin")
+        os.path.join(VIS_DATA_DIR, "C_result.bin"), 
+        cache_size_tiles=CACHE_SIZE_TILES
     )
     elapsed = time.time() - start_time
     print(f"Execution completed in {elapsed:.1f} seconds")
