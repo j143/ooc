@@ -17,7 +17,7 @@ class Plan:
         self.op = op
         self.shape = op.shape
     
-    def compute(self, output_path):
+    def compute(self, output_path, cache_size_tiles=None):
         """Triggers the execution of the entire computation plan."""
         
         from .optimizer import generate_io_trace
@@ -26,7 +26,9 @@ class Plan:
         print(f"io_trace: {io_trace}")
         buffer_manager = None
         if use_buffer_manager:
-            buffer_manager = BufferManager(max_cache_size_tiles=DEFAULT_CACHE_SIZE_TILES, io_trace=io_trace)
+            cache_size = cache_size_tiles if cache_size_tiles is not None else DEFAULT_CACHE_SIZE_TILES
+            buffer_manager = BufferManager(max_cache_size_tiles=cache_size, io_trace=io_trace)
+            print(f"Using buffer manager with cache size: {cache_size} tiles")
         else:
             print(" - No buffer manager used. Will read/write directly to disk.")
         

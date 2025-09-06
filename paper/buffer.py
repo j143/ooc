@@ -39,7 +39,7 @@ class BufferManager:
     
     def _evict_optimal(self, trace_pos: int):
         """
-        Belady's algorithm
+        Belady's algorithm with performance optimizations
         Evicts the tile whose next use is furthest in the future according to the I/O trace.
         Args:
             trace_pos: Current position in the I/O trace (stateless)
@@ -52,18 +52,26 @@ class BufferManager:
             # If trace is exhausted, fall back to LRU
             self._evict_lru()
             return
-            
-        future_trace = self.io_trace[trace_pos:]
+        
+        # Performance optimization: limit search window for very large traces
+        max_lookahead = min(10000, len(self.io_trace) - trace_pos)
+        future_trace = self.io_trace[trace_pos:trace_pos + max_lookahead]
+        
+        # Build a lookup index for faster searching
+        trace_lookup = {}
+        for i, entry in enumerate(future_trace):
+            if entry not in trace_lookup:
+                trace_lookup[entry] = i
+        
         distances = {}
         for tile_key in self.cache:
-            try:
-                # Convert cache key to match io_trace format (basename instead of full path)
-                trace_key = (os.path.basename(tile_key[0]), tile_key[1], tile_key[2])
-                # Find the next distance when this tile is needed
-                distance = future_trace.index(trace_key)
-                distances[tile_key] = distance
-            except ValueError:
-                # This tile is never used again, candidate for eviction!
+            # Convert cache key to match io_trace format (basename instead of full path)
+            trace_key = (os.path.basename(tile_key[0]), tile_key[1], tile_key[2])
+            
+            if trace_key in trace_lookup:
+                distances[tile_key] = trace_lookup[trace_key]
+            else:
+                # This tile is never used again in the lookahead window
                 distances[tile_key] = float('inf')
         
         # Evict the tile with the largest distance to its next use
