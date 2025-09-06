@@ -82,11 +82,13 @@ The Paper matrix framework now uses Python's standard `unittest` framework for c
 
 ## Structure
 
-The testing suite is organized into three distinct test modules:
+The testing suite is organized into five distinct test modules:
 
 - **`tests/test_core.py`**: Tests for the `PaperMatrix` class, including matrix creation, shape/dtype validation, and the `get_tile()` method
 - **`tests/test_buffer.py`**: Tests for the `BufferManager` class, covering cache behavior, HIT/MISS logging, LRU eviction policy, and Optimal eviction policy  
 - **`tests/test_plan_optimizer.py`**: Tests for the `Plan` class and optimizer functionality, including PlanNode tree construction and I/O trace generation
+- **`tests/test_backend_kernels.py`**: Tests for backend computation kernels including `add()`, `multiply()`, and all fused operations (`execute_fused_add_multiply()`, `execute_fused_matmul_scalar()`, etc.)
+- **`tests/test_fusion_operations.py`**: Tests for fusion operation correctness, comparing fused vs unfused computation results, thread safety, and memory footprint optimization
 
 ## Test Runner
 
@@ -98,6 +100,39 @@ The framework includes a professional test runner (`run_tests.py`) that:
 - Runs all tests in the `tests/` directory automatically
 
 ## Coverage
+
+### Backend Kernel Testing
+
+The framework now includes comprehensive testing for all backend computation kernels:
+
+**Core Operations:**
+- Matrix addition (`add()`) - Tests correctness with and without buffer manager, validates error handling for shape mismatches
+- Matrix multiplication (`multiply()`) - Tests correctness with various matrix sizes, buffer manager integration, and dimension compatibility validation
+
+**Fused Operations:**
+- Fused add-multiply: `(A + B) * scalar` - Tests single-pass computation correctness
+- Fused matmul-scalar: `(A @ B) * scalar` - Tests matrix multiplication with scalar application
+- Fused add-matmul: `(A + B) @ C` - Tests addition followed by matrix multiplication  
+- Fused double scalar: `(A * scalar1) * scalar2` - Tests optimized scalar multiplication
+
+### Fusion Operation Validation
+
+The `test_fusion_operations.py` module provides rigorous validation that fused operations produce identical results to their unfused equivalents:
+
+- **Correctness Testing**: Compares fused vs step-by-step computation results with high precision
+- **Thread Safety**: Validates that fused operations work correctly in multi-threaded environments
+- **Memory Efficiency**: Confirms that fusion operations avoid creating intermediate temporary files
+- **Large Matrix Testing**: Tests fusion correctness with matrices spanning multiple tiles
+
+### CI/CD Integration
+
+The framework includes a complete GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) that:
+
+- **Multi-Python Support**: Tests across Python 3.9, 3.10, 3.11, and 3.12
+- **Dependency Management**: Automatically installs numpy and any additional requirements
+- **Automated Testing**: Runs the full test suite on every push and pull request
+- **Code Quality**: Includes linting with flake8, code formatting with black, and import sorting with isort
+- **Artifact Preservation**: Uploads test results and coverage reports for analysis
 
 The test suite provides comprehensive coverage of critical functionality:
 
