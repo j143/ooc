@@ -71,3 +71,57 @@ Analogy: A team of workers where each is given their own personal, pre-written i
 **The Mechanism:** The responsibility of tracking progress is moved up to the orchestrator (the backend kernel). Before submitting any tasks, the backend calculates the correct trace_pos for each individual unit of work. This position is then passed as a parameter to the BufferManager.get_tile method.
 
 Each call to the BufferManager is now a self-contained, independent request that provides all the context needed to make a perfect decision. By removing the shared counter, we completely eliminate the race condition.
+
+# Unittest Testing Framework
+
+Status: Implemented
+
+## Overview
+
+The Paper matrix framework now uses Python's standard `unittest` framework for comprehensive, maintainable testing. This professional testing infrastructure provides confidence in the framework's correctness and enables future development without introducing regressions.
+
+## Structure
+
+The testing suite is organized into three distinct test modules:
+
+- **`tests/test_core.py`**: Tests for the `PaperMatrix` class, including matrix creation, shape/dtype validation, and the `get_tile()` method
+- **`tests/test_buffer.py`**: Tests for the `BufferManager` class, covering cache behavior, HIT/MISS logging, LRU eviction policy, and Optimal eviction policy  
+- **`tests/test_plan_optimizer.py`**: Tests for the `Plan` class and optimizer functionality, including PlanNode tree construction and I/O trace generation
+
+## Test Runner
+
+The framework includes a professional test runner (`run_tests.py`) that:
+
+- Uses `unittest.TestLoader` for automatic test discovery
+- Provides verbose output with detailed test descriptions
+- Returns appropriate exit codes for CI/CD integration (0 for success, non-zero for failure)
+- Runs all tests in the `tests/` directory automatically
+
+## Coverage
+
+The test suite provides comprehensive coverage of critical functionality:
+
+### Core Module Tests
+- PaperMatrix creation with correct shape and data type validation
+- Tile retrieval correctness using `get_tile()` method
+- Boundary condition handling and data integrity verification
+
+### Buffer Management Tests  
+- Cache HIT and MISS event logging verification
+- LRU eviction policy correctness with cache capacity scenarios
+- Optimal eviction policy validation using predictable I/O traces
+- Thread safety verification for concurrent access
+
+### Plan and Optimizer Tests
+- Plan object construction for various operations (+, @, scalar multiplication)
+- PlanNode tree structure validation for complex expressions
+- I/O trace generation verification for optimization algorithms
+
+## Usage
+
+Execute the complete test suite:
+```bash
+python run_tests.py
+```
+
+This unified testing approach replaces the previous ad-hoc test scripts, providing a single source of truth for correctness validation while maintaining the performance benchmarks in the `benchmarks/` directory.
