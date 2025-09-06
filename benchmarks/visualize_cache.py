@@ -28,7 +28,7 @@ SCENARIOS = {
 }
 
 # Choose scenario
-SCENARIO = "eviction_stress"  # Change to "fast_test", "large_analysis", or "eviction_stress"
+SCENARIO = "fast_test"  # Change to "fast_test", "large_analysis", or "eviction_stress"
 config = SCENARIOS[SCENARIO]
 SHAPE = config["shape"]
 CACHE_SIZE_TILES = config["cache_size"]

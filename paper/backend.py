@@ -31,6 +31,8 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
     
     # loop now uses the buffer manager for all data reads
     rows, cols = A.shape
+    trace_pos = 0  # Track trace position for stateless buffer manager
+    
     # Iterate through the matrices tile by tile
     with open(output_path, "r+b") as f_out:
         for r_start in range(0, rows, TILE_SIZE):
@@ -43,8 +45,10 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
                 # tile_B = B.data[r_start:r_end, c_start:c_end]
                 if buffer_manager:
                     print(" - Backend: Executing buffered 'add' kernel" )
-                    tile_A = buffer_manager.get_tile(A, r_start, c_start)
-                    tile_B = buffer_manager.get_tile(B, r_start, c_start)
+                    tile_A = buffer_manager.get_tile(A, r_start, c_start, trace_pos)
+                    trace_pos += 1  # Increment for next A tile access
+                    tile_B = buffer_manager.get_tile(B, r_start, c_start, trace_pos)
+                    trace_pos += 1  # Increment for next B tile access
                 else:
                     tile_A = A.data[r_start:r_end, c_start:c_end]
                     tile_B = B.data[r_start:r_end, c_start:c_end]
@@ -76,6 +80,7 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: B
 
     print("Performing eager multiplication...")
     rows_A, K, cols_B = A.shape[0], A.shape[1], B.shape[1]
+    trace_pos = 0  # Track trace position for stateless buffer manager
 
     # Loop over the tiles of the output matrix C
     for r_start in range(0, rows_A, TILE_SIZE):
@@ -95,8 +100,10 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: B
                 # tile_B = B.data[k_start:k_end, c_start:c_end]
                 if buffer_manager:
                     print(" - Backend: Executing buffered 'multiply' kernel" )
-                    tile_A = buffer_manager.get_tile(A, r_start, k_start)
-                    tile_B = buffer_manager.get_tile(B, k_start, c_start)
+                    tile_A = buffer_manager.get_tile(A, r_start, k_start, trace_pos)
+                    trace_pos += 1  # Increment for next A tile access
+                    tile_B = buffer_manager.get_tile(B, k_start, c_start, trace_pos)
+                    trace_pos += 1  # Increment for next B tile access
                 else:
                     tile_A = A.data[r_start:r_end, k_start:k_end]
                     tile_B = B.data[k_start:k_end, c_start:c_end]
@@ -113,12 +120,12 @@ def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: B
 
 # New parallel kernel
 
-def _process_fused_tile(A, B, scalar, r_start, r_end, c_start, c_end, buffer_manager: BufferManager):
+def _process_fused_tile(A, B, scalar, r_start, r_end, c_start, c_end, buffer_manager: BufferManager, trace_pos: int):
     """Helper function to process a single tile. This is what each thread runs."""
     
     if buffer_manager:
-        tile_A = buffer_manager.get_tile(A, r_start, c_start)
-        tile_B = buffer_manager.get_tile(B, r_start, c_start)
+        tile_A = buffer_manager.get_tile(A, r_start, c_start, trace_pos)
+        tile_B = buffer_manager.get_tile(B, r_start, c_start, trace_pos + 1)
     else:
         tile_A = A.data[r_start:r_end, c_start:c_end]
         tile_B = B.data[r_start:r_end, c_start:c_end]
@@ -132,6 +139,7 @@ def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, ou
     """
     C = PaperMatrix(output_path, A.shape, mode='w+')
     rows, cols = A.shape
+    trace_pos = 0  # Track trace position for stateless buffer manager
     
     # Use a ThreadPoolExecutor to manage a pool of worker threads.
     with ThreadPoolExecutor(max_workers=4) as executor:
@@ -146,9 +154,11 @@ def execute_fused_add_multiply(A: PaperMatrix, B: PaperMatrix, scalar: float, ou
                     _process_fused_tile,
                     A, B, scalar,
                     r_start, r_end, c_start, c_end,
-                    buffer_manager
+                    buffer_manager, trace_pos
                 )
                 futures.append(future)
+                # Each tile accesses A and B, so increment by 2
+                trace_pos += 2
 
         # Retrieve results as they complete.
         for future in futures:
