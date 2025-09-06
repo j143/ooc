@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600" style="background-color:#f9f9f9; font-family: Arial, sans-serif;">
+    <!-- SVG for visualizing the race condition and its solution -->
+    <!-- Author: Gemini -->
+    <!-- Date: 2025-09-06 -->
+    
+    <!-- Define styles and markers -->
+    <defs>
+        <style>
+            .title { font-size: 20px; font-weight: bold; text-anchor: middle; }
+            .subtitle { font-size: 16px; font-weight: bold; text-anchor: middle; }
+            .label { font-size: 12px; }
+            .arrow-label { font-size: 10px; fill: #555; }
+            .box { stroke: #333; stroke-width: 1.5; fill: #fff; }
+            .thread-box { fill: #e0f7fa; }
+            .manager-box { fill: #fffde7; }
+            .kernel-box { fill: #fce4ec; }
+            .data-circle { fill: #e8f5e9; stroke: #a5d6a7; }
+            .problem-box { fill: #ffebee; stroke: #e57373; }
+            .solution-box { fill: #e8f5e9; stroke: #a5d6a7; }
+        </style>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#333" />
+        </marker>
+        <marker id="arrowhead-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#d32f2f" />
+        </marker>
+        <marker id="arrowhead-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#388e3c" />
+        </marker>
+    </defs>
+
+    <!-- Titles and separator -->
+    <text x="500" y="30" class="title">Buffer Manager Concurrency: Race Condition and Solution</text>
+    <line x1="10" y1="50" x2="990" y2="50" stroke="#ccc" stroke-width="1"/>
+    <line x1="500" y1="60" x2="500" y2="590" stroke="#ccc" stroke-width="1"/>
+
+    <!-- Left Panel: The Problem -->
+    <text x="250" y="80" class="subtitle">The Problem: Shared State</text>
+    <rect x="150" y="120" width="200" height="80" class="manager-box box"/>
+    <text x="250" y="145" text-anchor="middle" class="label">BufferManager</text>
+    <rect x="175" y="160" width="150" height="30" class="problem-box"/>
+    <text x="250" y="180" text-anchor="middle" class="label">Shared `trace_pos` = 100</text>
+    <rect x="50" y="250" width="150" height="60" class="thread-box box"/>
+    <text x="125" y="280" text-anchor="middle" class="label">Thread A (Task 100)</text>
+    <rect x="300" y="250" width="150" height="60" class="thread-box box"/>
+    <text x="375" y="280" text-anchor="middle" class="label">Thread B (Task 101)</text>
+    <path d="M 125,250 Q 150,200 200,190" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)"/>
+    <text x="70" y="220" class="arrow-label">1. Reads `trace_pos` (100)</text>
+    <path d="M 225,160 V 250 H 125" stroke="#d32f2f" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-red)"/>
+    <text x="130" y="225" class="arrow-label" fill="#d32f2f">2. Updates `trace_pos` to 101</text>
+    <path d="M 375,250 Q 350,200 300,190" stroke="#d32f2f" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-red)"/>
+    <text x="280" y="220" class="arrow-label" fill="#d32f2f">3. Reads WRONG `trace_pos` (101)</text>
+    <rect x="100" y="380" width="300" height="150" class="problem-box"/>
+    <text x="250" y="400" text-anchor="middle" class="label" style="font-weight:bold;">Result: Corrupted Future View</text>
+    <text x="110" y="430" class="label">Thread A makes a decision for Task 100.</text>
+    <text x="110" y="445" class="label">Thread B makes a decision for Task 101,</text>
+    <text x="110" y="460" class="label" style="fill:#d32f2f;">but uses the future as seen from the wrong</text>
+    <text x="110" y="475" class="label" style="fill:#d32f2f;">position (101), leading to a bad eviction.</text>
+
+    <!-- Right Panel: The Solution -->
+    <text x="750" y="80" class="subtitle">The Solution: Stateless</text>
+    <rect x="625" y="120" width="250" height="100" class="kernel-box box"/>
+    <text x="750" y="140" text-anchor="middle" class="label" style="font-weight:bold;">Backend Kernel (Main Thread)</text>
+    <text x="635" y="165" class="label">1. Calculates correct `trace_pos` for</text>
+    <text x="635" y="180" class="label">   each task *before* submission.</text>
+    <text x="635" y="195" class="label">   `pos_A = 100`, `pos_B = 102`, etc.</text>
+    <rect x="550" y="290" width="180" height="80" class="thread-box box"/>
+    <text x="640" y="310" text-anchor="middle" class="label">Thread A</text>
+    <rect x="610" y="325" width="60" height="30" class="data-circle"/>
+    <text x="640" y="345" text-anchor="middle" class="label">pos=100</text>
+    <rect x="770" y="290" width="180" height="80" class="thread-box box"/>
+    <text x="860" y="310" text-anchor="middle" class="label">Thread B</text>
+    <rect x="830" y="325" width="60" height="30" class="data-circle"/>
+    <text x="860" y="345" text-anchor="middle" class="label">pos=102</text>
+    <path d="M 680,220 V 290" stroke="#388e3c" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-green)"/>
+    <text x="685" y="260" class="arrow-label">submit(task, pos=100)</text>
+    <path d="M 820,220 V 290" stroke="#388e3c" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-green)"/>
+    <text x="825" y="260" class="arrow-label">submit(task, pos=102)</text>
+    <rect x="650" y="420" width="200" height="60" class="manager-box box"/>
+    <text x="750" y="440" text-anchor="middle" class="label">BufferManager</text>
+    <text x="750" y="460" text-anchor="middle" class="label">get_tile(..., trace_pos)</text>
+    <path d="M 640,370 V 420" stroke="#388e3c" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-green)"/>
+    <path d="M 860,370 V 420" stroke="#388e3c" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-green)"/>
+    <rect x="600" y="500" width="300" height="60" class="solution-box"/>
+    <text x="750" y="520" text-anchor="middle" class="label" style="font-weight:bold;">Result: Perfect Eviction Decisions</text>
+    <text x="610" y="540" class="label">Each thread provides its correct "present</text>
+    <text x="610" y="555" class="label">moment", so the eviction logic is always right.</text>
+</svg>
