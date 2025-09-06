@@ -15,7 +15,7 @@ class BufferManager:
     def __init__(self, max_cache_size_tiles: int = DEFAULT_CACHE_SIZE_TILES, io_trace: list = None):
         self.max_size = max_cache_size_tiles
         self.io_trace = io_trace
-        self.trace_pos = 0
+        # Remove self.trace_pos - now passed as parameter for stateless operation
         self.cache = {} # Stores tile data: (matrix_path, r, c) -> numpy_tile
         self.lru_tracker = collections.OrderedDict() # Keeps track of usage order
         self.lock = threading.Lock() # Ensure thread-safe access to the cache
@@ -37,21 +37,23 @@ class BufferManager:
         # log the eviction event
         self.event_log.append((time.perf_counter(), 'EVICT', lru_key, len(self.cache)))
     
-    def _evict_optimal(self):
+    def _evict_optimal(self, trace_pos: int):
         """
         Belady's algorithm
         Evicts the tile whose next use is furthest in the future according to the I/O trace.
+        Args:
+            trace_pos: Current position in the I/O trace (stateless)
         """
         if not self.cache:
             return
             
         # Bounds check for trace position
-        if self.trace_pos >= len(self.io_trace):
+        if trace_pos >= len(self.io_trace):
             # If trace is exhausted, fall back to LRU
             self._evict_lru()
             return
             
-        future_trace = self.io_trace[self.trace_pos:]
+        future_trace = self.io_trace[trace_pos:]
         distances = {}
         for tile_key in self.cache:
             try:
@@ -72,9 +74,14 @@ class BufferManager:
             del self.lru_tracker[evict_key]
         self.event_log.append((time.perf_counter(), 'EVICT', evict_key, len(self.cache)))
 
-    def get_tile(self, matrix: PaperMatrix, r_start: int, c_start: int):
+    def get_tile(self, matrix: PaperMatrix, r_start: int, c_start: int, trace_pos: int = 0):
         """
         Fetches a tile, use the cache if possible, or loading from disk.
+        Args:
+            matrix: The matrix to fetch from
+            r_start: Row start position for the tile
+            c_start: Column start position for the tile
+            trace_pos: Current position in the I/O trace (stateless)
         """
         tile_key = (matrix.filepath, r_start, c_start)
         current_time = time.perf_counter()
@@ -86,10 +93,7 @@ class BufferManager:
                 self.lru_tracker.move_to_end(tile_key)
                 self.event_log.append((current_time, 'HIT', tile_key, len(self.cache)))
                 
-                if self.io_trace:
-                    # Bounds check for trace position
-                    if self.trace_pos < len(self.io_trace):
-                        self.trace_pos += 1
+                # Note: trace_pos is not incremented here as it's managed by caller
                 return self.cache[tile_key]
         
         # --- Cache miss ---
@@ -108,7 +112,7 @@ class BufferManager:
             # Check if we need to evict before adding (fix: check before, not after)
             if len(self.cache) >= self.max_size:
                 if self.io_trace:
-                    self._evict_optimal()
+                    self._evict_optimal(trace_pos)
                 else:
                     self._evict_lru()
 
@@ -117,10 +121,7 @@ class BufferManager:
             self.lru_tracker[tile_key] = None
             self.lru_tracker.move_to_end(tile_key)
             
-            if self.io_trace:
-                # Bounds check for trace position
-                if self.trace_pos < len(self.io_trace):
-                    self.trace_pos += 1
+            # Note: trace_pos is not incremented here as it's managed by caller
             
         return tile_data
 
