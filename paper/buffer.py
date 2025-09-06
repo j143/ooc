@@ -1,5 +1,6 @@
 import collections
 import threading
+import os
 from .core import PaperMatrix
 import time
 
@@ -54,8 +55,10 @@ class BufferManager:
         distances = {}
         for tile_key in self.cache:
             try:
+                # Convert cache key to match io_trace format (basename instead of full path)
+                trace_key = (os.path.basename(tile_key[0]), tile_key[1], tile_key[2])
                 # Find the next distance when this tile is needed
-                distance = future_trace.index(tile_key)
+                distance = future_trace.index(trace_key)
                 distances[tile_key] = distance
             except ValueError:
                 # This tile is never used again, candidate for eviction!
