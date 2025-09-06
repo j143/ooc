@@ -1,0 +1,155 @@
+<svg width="1000" height="1450" viewBox="0 0 1000 1450" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+      Diagram for the 'paper' Out-of-Core Framework
+      Designed for clarity and maintainability.
+      - Layers are grouped using <g> tags.
+      - All styles are centralized in the <defs> section.
+    -->
+    <defs>
+        <style>
+            /* Global Font and Color Scheme */
+            .title-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #2c3e50; }
+            .subtitle-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-style: italic; fill: #7f8c8d; }
+            .layer-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 20px; font-weight: 600; fill: #34495e; }
+            .component-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #2980b9; }
+            .label-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; fill: #34495e; }
+            .code-text { font-family: 'Courier New', monospace; font-size: 14px; fill: #2980b9; }
+            .arrow-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; fill: #2c3e50; }
+            .data-arrow-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; fill: #27ae60; font-weight: bold; }
+
+            /* Component Box Styles */
+            .layer-box { fill: #f8f9fa; stroke: #495057; stroke-width: 2; rx: 12; }
+            .component-box { fill: #ffffff; stroke: #adb5bd; stroke-width: 1.5; rx: 6; }
+            .sub-component-box { fill: #f1f3f5; stroke: #ced4da; stroke-width: 1; rx: 4;}
+
+            /* Arrow Styles */
+            .arrow-line { stroke: #34495e; stroke-width: 2; marker-end: url(#arrowhead); }
+            .data-arrow-line { stroke: #27ae60; stroke-width: 2.5; marker-end: url(#data-arrowhead); stroke-dasharray: 8 4; }
+        </style>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#34495e" />
+        </marker>
+        <marker id="data-arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" />
+        </marker>
+    </defs>
+
+    <!-- Title -->
+    <text x="500" y="40" text-anchor="middle" class="title-text">'paper' Framework Architecture</text>
+    <text x="500" y="65" text-anchor="middle" class="subtitle-text">An Out-of-Core System with PreVision-Style Optimal Caching</text>
+
+    <!-- Layer 1: User Application -->
+    <g id="user-layer">
+        <rect x="100" y="100" width="800" height="100" class="layer-box" />
+        <text x="500" y="130" text-anchor="middle" class="layer-title">1. User Application</text>
+        <text x="500" y="165" text-anchor="middle" class="code-text">plan = (plan_A @ plan_B) * 2</text>
+        <text x="500" y="185" text-anchor="middle" class="code-text">result = plan.compute(policy='optimal')</text>
+    </g>
+
+    <line x1="500" y1="200" x2="500" y2="240" class="arrow-line" />
+    <text x="510" y="225" class="arrow-text">User builds a Plan</text>
+
+    <!-- Layer 2: Plan Layer -->
+    <g id="plan-layer">
+        <rect x="100" y="240" width="800" height="120" class="layer-box" />
+        <text x="500" y="270" text-anchor="middle" class="layer-title">2. Plan Layer (plan.py)</text>
+        <rect x="250" y="290" width="500" height="60" class="component-box"/>
+        <text x="500" y="315" text-anchor="middle" class="label-text">Builds a Computation Graph (AST) of PlanNodes</text>
+        <text x="500" y="335" text-anchor="middle" class="code-text">Plan(op_node=MultiplyScalarNode(...))</text>
+    </g>
+
+    <line x1="500" y1="360" x2="500" y2="400" class="arrow-line" />
+    <text x="510" y="385" class="arrow-text">.compute() passes the Plan</text>
+
+    <!-- Layer 3: Optimizer Layer -->
+    <g id="optimizer-layer">
+        <rect x="100" y="400" width="800" height="200" class="layer-box" />
+        <text x="500" y="430" text-anchor="middle" class="layer-title">3. Optimizer Layer (optimizer.py)</text>
+        
+        <rect x="150" y="450" width="280" height="120" class="component-box"/>
+        <text x="290" y="475" text-anchor="middle" class="component-title">generate_io_trace()</text>
+        <text x="290" y="500" text-anchor="middle" class="label-text" style="font-size:13px;">Walks the plan tree to</text>
+        <text x="290" y="520" text-anchor="middle" class="label-text" style="font-size:13px;">predict the future.</text>
+        <text x="290" y="550" text-anchor="middle" class="code-text">Returns I/O Trace</text>
+        
+        <rect x="570" y="450" width="280" height="120" class="component-box"/>
+        <text x="710" y="475" text-anchor="middle" class="component-title">execute()</text>
+        <text x="710" y="500" text-anchor="middle" class="label-text" style="font-size:13px;">- Checks for Fusion Rules</text>
+        <text x="710" y="520" text-anchor="middle" class="label-text" style="font-size:13px;">- Recursively calls Backend</text>
+        <text x="710" y="550" text-anchor="middle" class="code-text">Orchestrates Execution</text>
+    </g>
+    
+    <!-- Optimizer to Buffer Manager Data Flow (I/O Trace) -->
+    <path d="M 430 510 C 250 550, 250 640, 430 680" stroke-width="2.5" stroke="#27ae60" fill="none" class="data-arrow-line" />
+    <text x="280" y="605" class="data-arrow-text">I/O Trace</text>
+
+    <line x1="500" y1="600" x2="500" y2="640" class="arrow-line" />
+    <text x="510" y="625" class="arrow-text">Calls Backend Kernels</text>
+
+    <!-- Layer 4: Execution & Memory Layer -->
+    <g id="execution-memory-layer">
+        <rect x="100" y="640" width="800" height="380" class="layer-box" />
+        <text x="500" y="670" text-anchor="middle" class="layer-title">4. Execution &amp; Memory Layer</text>
+
+        <!-- Buffer Manager Box -->
+        <rect x="120" y="690" width="350" height="290" class="component-box"/>
+        <text x="295" y="715" text-anchor="middle" class="component-title">BufferManager (buffer.py)</text>
+        <rect x="140" y="735" width="310" height="110" class="sub-component-box"/>
+        <text x="295" y="760" text-anchor="middle" class="label-text" style="font-weight:bold;">In-Memory Cache (RAM)</text>
+        <text x="295" y="790" text-anchor="middle" class="code-text">[Tile A, Tile B, ...]</text>
+        <text x="295" y="815" text-anchor="middle" class="label-text">Size: N tiles</text>
+        
+        <rect x="140" y="860" width="310" height="100" class="sub-component-box"/>
+        <text x="295" y="880" text-anchor="middle" class="label-text" style="font-weight:bold;">Policy Switch</text>
+        <text x="295" y="910" text-anchor="middle" class="code-text">if io_trace: _evict_optimal()</text>
+        <text x="295" y="935" text-anchor="middle" class="code-text">else: _evict_lru()</text>
+
+        <!-- Backend Kernels Box -->
+        <rect x="530" y="690" width="350" height="290" class="component-box"/>
+        <text x="705" y="715" text-anchor="middle" class="component-title">Backend Kernels (backend.py)</text>
+        <text x="705" y="750" text-anchor="middle" class="label-text">- Parallel Tile Processing</text>
+        <text x="705" y="775" text-anchor="middle" class="label-text">- Fused &amp; Standard Kernels</text>
+        <text x="705" y="800" text-anchor="middle" class="code-text">add(), multiply(), ...</text>
+        <text x="705" y="860" text-anchor="middle" class="label-text" style="font-weight:bold;">Interactions</text>
+        <text x="705" y="885" text-anchor="middle" class="label-text">1. Requests tiles from BufferManager</text>
+        <text x="705" y="910" text-anchor="middle" class="label-text">2. Writes results to Core Layer</text>
+    </g>
+    
+    <!-- Backend <> BufferManager Interaction Arrows -->
+    <path d="M 470 885 L 530 885" class="arrow-line" transform="rotate(180 500 885)" />
+    <path d="M 470 885 L 530 885" class="arrow-line" transform="translate(40,0)" />
+    <text x="445" y="875" class="arrow-text">get_tile()</text>
+
+    <!-- Arrow to Core Layer -->
+    <line x1="500" y1="1020" x2="500" y2="1060" class="arrow-line" />
+    <text x="310" y="1045" class="arrow-text">On Miss: Read Tile</text>
+    <text x="600" y="1045" class="arrow-text">Write Result</text>
+
+    <!-- Layer 5: Core Layer -->
+    <g id="core-layer">
+        <rect x="100" y="1060" width="800" height="350" class="layer-box" />
+        <text x="500" y="1090" text-anchor="middle" class="layer-title">5. Core I/O Layer (core.py)</text>
+
+        <rect x="150" y="1120" width="700" height="250" class="component-box"/>
+        <text x="500" y="1150" text-anchor="middle" class="component-title">PaperMatrix</text>
+        <text x="500" y="1180" text-anchor="middle" class="label-text">Abstracts direct disk interaction.</text>
+        
+        <rect x="180" y="1210" width="300" height="130" class="sub-component-box"/>
+        <text x="330" y="1235" text-anchor="middle" class="label-text" style="font-weight:bold;">Read Path</text>
+        <text x="330" y="1265" text-anchor="middle" class="code-text">numpy.memmap</text>
+        <text x="330" y="1290" text-anchor="middle" class="label-text">Efficient tile reads</text>
+        <text x="330" y="1310" text-anchor="middle" class="label-text">via OS virtual memory.</text>
+        
+        <rect x="520" y="1210" width="300" height="130" class="sub-component-box"/>
+        <text x="670" y="1235" text-anchor="middle" class="label-text" style="font-weight:bold;">Write Path</text>
+        <text x="670" y="1265" text-anchor="middle" class="code-text">open() / seek() / write()</text>
+        <text x="670" y="1290" text-anchor="middle" class="label-text">True out-of-core writing</text>
+        <text x="670" y="1310" text-anchor="middle" class="label-text">with minimal memory.</text>
+        
+        <line x1="330" y1="1340" x2="330" y2="1380" style="stroke:#adb5bd; stroke-width:1.5;"/>
+        <line x1="670" y1="1340" x2="670" y2="1380" style="stroke:#adb5bd; stroke-width:1.5;"/>
+        <line x1="330" y1="1380" x2="670" y2="1380" style="stroke:#adb5bd; stroke-width:1.5;"/>
+        <text x="500" y="1405" text-anchor="middle" class="label-text" style="font-weight:bold;">Physical Disk Storage (SSD / HDD)</text>
+    </g>
+
+</svg>
