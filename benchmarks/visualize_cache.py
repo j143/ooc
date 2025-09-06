@@ -21,14 +21,14 @@ VIS_DATA_DIR = "visualize_data"
 
 # Configuration presets for different analysis scenarios
 SCENARIOS = {
-    "fast_test": {"shape": (4096, 4096), "cache_size": 64},
+    "fast_test": {"shape": (4096, 4096), "cache_size": 32},
     "standard": {"shape": (8192, 8192), "cache_size": 128}, 
     "large_analysis": {"shape": (16384, 16384), "cache_size": 256},
     "eviction_stress": {"shape": (8192, 8192), "cache_size": 32}  # Force evictions
 }
 
 # Choose scenario
-SCENARIO = "eviction_stress"  # Change to "fast_test", "large_analysis", or "eviction_stress"
+SCENARIO = "fast_test"  # Change to "fast_test", "large_analysis", or "eviction_stress"
 config = SCENARIOS[SCENARIO]
 SHAPE = config["shape"]
 CACHE_SIZE_TILES = config["cache_size"]
