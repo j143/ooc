@@ -9,44 +9,6 @@ The architecture is inspired by modern data systems and academic research (e.g.,
 
 ![Framework architecture](/paper-architecture.svg "Architecture")
 
-```
-+-----------------------------------------------------------------+
-|                          User Application                       |
-|                 (e.g., result = (A + B) * 2)                    |
-+-----------------------------------------------------------------+
-                                │
-                                ▼
-+-----------------------------------------------------------------+
-|    1. Plan Layer (paper/plan.py)                                 |
-|       - User-facing `Plan` object.                              |
-|       - Builds a graph of `PlanNode` objects (AST).             |
-|       - Does NO computation.                                    |
-+-----------------------------------------------------------------+
-                                │
-                                ▼ .compute()
-+-----------------------------------------------------------------+
-|    2. Optimizer Layer (paper/optimizer.py)                       |
-|       - Inspects the entire `PlanNode` graph.                   |
-|       - Matches patterns against a list of `FUSION_RULES`.      |
-|       - Rewrites the plan or selects a specialized kernel.      |
-+-----------------------------------------------------------------+
-                                │
-                                ▼
-+-----------------------------------------------------------------+
-|    3. Backend Layer (paper/backend.py)                           |
-|       - A library of "eager" execution kernels.                 |
-|       - Contains both standard and fused functions.             |
-|       - Performs the actual tile-by-tile computation.           |
-+-----------------------------------------------------------------+
-                                │
-                                ▼
-+-----------------------------------------------------------------+
-|    4. Core Layer (paper/core.py)                                 |
-|       - `paperMatrix` class handles direct disk I/O.             |
-|       - Uses `numpy.memmap` for efficient file access.          |
-+-----------------------------------------------------------------+
-
-```
 
 ### Testing
 
