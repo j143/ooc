@@ -98,13 +98,15 @@ def visualize_matrix_multiplication():
         log = log[::step]
         print(f"Sampled {len(log)} events for visualization")
 
-    # --- Generate the Multi-Plot visualization
-    print("Generating advanced cache visualizations...")
-    fig, axes = plt.subplots(3, 1, figsize=(15, 24), gridspec_kw={'height_ratios': [3, 2, 1]})
-    fig.suptitle('Advanced Cache Performance Analysis for Matrix Multiplication', fontsize=16)
+    # --- Generate the Enhanced Multi-Plot visualization for Buffer Architecture Analysis
+    print("Generating enhanced cache visualizations for buffer architecture analysis...")
+    fig, axes = plt.subplots(2, 3, figsize=(20, 14))
+    fig.suptitle('Enhanced Cache Performance Analysis for Buffer Architecture Decisions', fontsize=16)
 
-    # -- Plot 1: Cache acces pattern timeline
-    # Assign a unique integer ID (y-coordinate) to each tile key
+    # Flatten axes for easier indexing
+    axes = axes.flatten()
+
+    # -- Plot 1: Cache Access Pattern Timeline with Improved Detail
     tile_keys = sorted(list(set([event[2] for event in log])))
     tile_to_y = {key: i for i, key in enumerate(tile_keys)}
 
@@ -116,84 +118,238 @@ def visualize_matrix_multiplication():
 
     ax1 = axes[0]
     miss_x, miss_y = zip(*events['MISS']) if events['MISS'] else ([], [])
-    ax1.scatter(miss_x, miss_y, c='red', s=30, label='Cache Miss', zorder=3)
+    ax1.scatter(miss_x, miss_y, c='red', s=15, label='Cache Miss', alpha=0.7)
     hit_x, hit_y = zip(*events['HIT']) if events['HIT'] else ([], [])
-    ax1.scatter(hit_x, hit_y, c='green', s=20, label='Cache Hit', zorder=3)
+    ax1.scatter(hit_x, hit_y, c='green', s=10, label='Cache Hit', alpha=0.5)
     evict_x, evict_y = zip(*events['EVICT']) if events['EVICT'] else ([], [])
-    if evict_x:  # Only plot if evictions exist
-        ax1.scatter(evict_x, evict_y, c='blue', marker='x', s=50, label='Eviction', zorder=4)
-        print(f"Plotted {len(evict_x)} eviction events")
-    else:
-        print("No eviction events found - cache may be sized perfectly or eviction logic missing")
+    if evict_x:
+        ax1.scatter(evict_x, evict_y, c='blue', marker='x', s=40, label='Eviction', alpha=0.8)
     
-    ax1.set_title(f'1. Cache Access Pattern Timeline (Cache Size: {CACHE_SIZE_TILES} tiles)')
-    ax1.set_xlabel('Operation Index (Time)')
-    ax1.set_ylabel('Unique Tile ID')
+    ax1.set_title(f'Access Timeline (Cache: {CACHE_SIZE_TILES} tiles)')
+    ax1.set_xlabel('Operation Index')
+    ax1.set_ylabel('Tile ID')
     ax1.legend()
-    ax1.grid(True, linestyle='--', alpha=0.6)
+    ax1.grid(True, alpha=0.3)
 
-    # Add rolling hit rate as secondary y-axis
-    ax1_twin = ax1.twinx()
-    window_size = max(50, len(log) // 100)  # Adaptive window size
-    hit_rates = []
-    for i in range(len(log)):
-        window_start = max(0, i - window_size)
-        window_events = log[window_start:i+1]
-        hits = sum(1 for event in window_events if event[1] == 'HIT')
-        hit_rate = hits / len(window_events) if window_events else 0
-        hit_rates.append(hit_rate)
-    
-    ax1_twin.plot(range(len(log)), hit_rates, 'purple', alpha=0.7, linewidth=2, label='Rolling Hit Rate')
-    ax1_twin.set_ylabel('Rolling Hit Rate', color='purple')
-    ax1_twin.set_ylim(0, 1)
-    ax1_twin.tick_params(axis='y', labelcolor='purple')
-
-    # Set y-ticks to be more readable if there are not too many tiles
-    if len(tile_keys) < 30:
-        ax1.set_yticks(range(len(tile_keys)))
-        ax1.set_yticklabels([f"{name}[{r},{c}]" for name, r, c in tile_keys], rotation=0, fontsize=8)
-
-    # # --- Plot 2: Improved Tile Access Heatmap ---
+    # -- Plot 2: Matrix-Based Tile Access Pattern (A vs B matrices)
     ax2 = axes[1]
-    access_counts = Counter(event[2] for event in log if event[1] in ['HIT', 'MISS'])
+    access_counts_A = Counter()
+    access_counts_B = Counter() 
+    
+    for event in log:
+        if event[1] in ['HIT', 'MISS']:
+            name, r, c = event[2]
+            tile_coord = (r // TILE_SIZE, c // TILE_SIZE)
+            if 'A' in name:
+                access_counts_A[tile_coord] += 1
+            elif 'B' in name:
+                access_counts_B[tile_coord] += 1
+    
     max_row_idx = SHAPE[0] // TILE_SIZE
     max_col_idx = SHAPE[1] // TILE_SIZE
-    heatmap_combined = np.zeros((max_row_idx, max_col_idx))
+    
+    # Create combined heatmap showing A and B access patterns
+    heatmap_diff = np.zeros((max_row_idx, max_col_idx))
+    for (r_idx, c_idx), count_A in access_counts_A.items():
+        count_B = access_counts_B.get((r_idx, c_idx), 0)
+        heatmap_diff[r_idx, c_idx] = count_A - count_B  # Positive = more A, negative = more B
+    
+    im2 = ax2.imshow(heatmap_diff, cmap='RdBu_r', interpolation='nearest')
+    ax2.set_title('A vs B Matrix Access Difference')
+    ax2.set_xlabel('Tile Column')
+    ax2.set_ylabel('Tile Row')
+    fig.colorbar(im2, ax=ax2, label='A_accesses - B_accesses')
 
-    for (name, r, c), count in access_counts.items():
-        r_idx, c_idx = r // TILE_SIZE, c // TILE_SIZE
-        heatmap_combined[r_idx, c_idx] += count
-    
-    # Use viridis palette and add tile boundaries
-    im = ax2.imshow(heatmap_combined, cmap='viridis', interpolation='nearest')
-    ax2.set_title('2. Tile Access Frequency Heatmap (1024x1024 tiles)')
-    ax2.set_xlabel('Tile Column Index')
-    ax2.set_ylabel('Tile Row Index')
-    
-    # Add grid lines to show tile boundaries
-    ax2.set_xticks(np.arange(-0.5, max_col_idx, 1), minor=True)
-    ax2.set_yticks(np.arange(-0.5, max_row_idx, 1), minor=True)
-    ax2.grid(which='minor', color='white', linestyle='-', linewidth=0.5, alpha=0.7)
-    
-    fig.colorbar(im, ax=ax2, label='Access Count')
-
-    # --- Plot 3: Cache Occupancy Over Time ---
+    # -- Plot 3: Cache Performance Metrics Over Time
     ax3 = axes[2]
-    time_steps = range(len(log))
-    cache_sizes = [event[3] for event in log]
-    ax3.plot(time_steps, cache_sizes, label='Cache Occupancy', color='purple')
-    ax3.axhline(y=CACHE_SIZE_TILES, color='r', linestyle='--', label='Max Cache Size')
-    ax3.set_title('3. Cache Occupancy Over Time')
-    ax3.set_xlabel('Operation Index (Time)')
-    ax3.set_ylabel('Tiles in Cache')
-    ax3.set_ylim(0, CACHE_SIZE_TILES + 2)
-    ax3.legend()
-    ax3.grid(True, linestyle='--', alpha=0.6)
+    window_size = max(100, len(log) // 50)
+    metrics = {'hit_rate': [], 'eviction_rate': [], 'cache_utilization': []}
     
+    for i in range(0, len(log), window_size):
+        window = log[i:i+window_size]
+        hits = sum(1 for e in window if e[1] == 'HIT')
+        evictions = sum(1 for e in window if e[1] == 'EVICT')
+        avg_cache_size = sum(e[3] for e in window) / len(window) if window else 0
+        
+        metrics['hit_rate'].append(hits / len(window) if window else 0)
+        metrics['eviction_rate'].append(evictions / len(window) if window else 0) 
+        metrics['cache_utilization'].append(avg_cache_size / CACHE_SIZE_TILES if CACHE_SIZE_TILES > 0 else 0)
+    
+    x_windows = range(len(metrics['hit_rate']))
+    ax3.plot(x_windows, metrics['hit_rate'], 'g-', label='Hit Rate', linewidth=2)
+    ax3.plot(x_windows, metrics['eviction_rate'], 'r-', label='Eviction Rate', linewidth=2)
+    ax3.plot(x_windows, metrics['cache_utilization'], 'b-', label='Cache Utilization', linewidth=2)
+    ax3.set_title('Performance Metrics Over Time')
+    ax3.set_xlabel('Time Window')
+    ax3.set_ylabel('Rate/Utilization')
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    ax3.set_ylim(0, 1)
+
+    # -- Plot 4: Tile Reuse Distance Analysis
+    ax4 = axes[3]
+    tile_last_access = {}
+    reuse_distances = []
+    
+    for i, event in enumerate(log):
+        if event[1] in ['HIT', 'MISS']:
+            tile_key = event[2]
+            if tile_key in tile_last_access:
+                distance = i - tile_last_access[tile_key]
+                reuse_distances.append(distance)
+            tile_last_access[tile_key] = i
+    
+    if reuse_distances:
+        # Plot histogram of reuse distances
+        bins = np.logspace(0, np.log10(max(reuse_distances)), 30)
+        ax4.hist(reuse_distances, bins=bins, alpha=0.7, edgecolor='black')
+        ax4.set_xscale('log')
+        ax4.set_title('Tile Reuse Distance Distribution')
+        ax4.set_xlabel('Distance (log scale)')
+        ax4.set_ylabel('Frequency')
+        ax4.grid(True, alpha=0.3)
+        
+        # Add cache size indicator
+        ax4.axvline(x=CACHE_SIZE_TILES, color='red', linestyle='--', 
+                   label=f'Cache Size ({CACHE_SIZE_TILES})', linewidth=2)
+        ax4.legend()
+
+    # -- Plot 5: Cache Efficiency Analysis
+    ax5 = axes[4]
+    
+    # Calculate miss rate by cache size (theoretical analysis)
+    cache_sizes = range(16, 513, 16)  # Test different cache sizes
+    theoretical_miss_rates = []
+    
+    for cache_size in cache_sizes:
+        if reuse_distances:
+            # Estimate miss rate: tiles with reuse distance > cache_size will likely miss
+            long_reuse = sum(1 for d in reuse_distances if d > cache_size)
+            miss_rate = long_reuse / len(reuse_distances)
+            theoretical_miss_rates.append(miss_rate)
+        else:
+            theoretical_miss_rates.append(0)
+    
+    ax5.plot(cache_sizes, theoretical_miss_rates, 'b-', linewidth=2, label='Estimated Miss Rate')
+    ax5.axvline(x=CACHE_SIZE_TILES, color='red', linestyle='--', 
+               label=f'Current Cache Size ({CACHE_SIZE_TILES})', linewidth=2)
+    ax5.set_title('Cache Size vs Miss Rate Analysis')
+    ax5.set_xlabel('Cache Size (tiles)')
+    ax5.set_ylabel('Estimated Miss Rate')
+    ax5.legend()
+    ax5.grid(True, alpha=0.3)
+    ax5.set_ylim(0, 1)
+
+    # -- Plot 6: Eviction Algorithm Effectiveness
+    ax6 = axes[5]
+    
+    # Analyze eviction timing patterns
+    eviction_intervals = []
+    last_eviction = None
+    
+    for i, event in enumerate(log):
+        if event[1] == 'EVICT':
+            if last_eviction is not None:
+                eviction_intervals.append(i - last_eviction)
+            last_eviction = i
+    
+    if eviction_intervals:
+        ax6.hist(eviction_intervals, bins=30, alpha=0.7, edgecolor='black')
+        ax6.set_title('Eviction Interval Distribution')
+        ax6.set_xlabel('Operations Between Evictions')
+        ax6.set_ylabel('Frequency')
+        ax6.grid(True, alpha=0.3)
+        
+        # Add statistics text
+        avg_interval = np.mean(eviction_intervals)
+        ax6.axvline(x=avg_interval, color='red', linestyle='--', 
+                   label=f'Avg Interval: {avg_interval:.1f}', linewidth=2)
+        ax6.legend()
+    else:
+        ax6.text(0.5, 0.5, 'No Evictions Detected\n(Cache may be oversized)', 
+                ha='center', va='center', transform=ax6.transAxes, fontsize=12)
+        ax6.set_title('Eviction Analysis')
+
     plt.tight_layout(rect=[0, 0.03, 1, 0.97])
     output_image_path = os.path.join(VIS_DATA_DIR, "cache_visualization.png")
-    plt.savefig(output_image_path)
-    print(f"Visualization saved to: {output_image_path}")
+    plt.savefig(output_image_path, dpi=150, bbox_inches='tight')
+    print(f"Enhanced visualization saved to: {output_image_path}")
+
+    # --- Generate Buffer Architecture Recommendations ---
+    print("\n" + "="*60)
+    print("BUFFER ARCHITECTURE ANALYSIS & RECOMMENDATIONS")
+    print("="*60)
+    
+    current_hit_rate = event_counts.get('HIT', 0) / len(log) if log else 0
+    current_miss_rate = event_counts.get('MISS', 0) / len(log) if log else 0
+    current_eviction_rate = event_counts.get('EVICT', 0) / len(log) if log else 0
+    
+    print(f"Current Performance:")
+    print(f"  Hit Rate: {current_hit_rate:.1%}")
+    print(f"  Miss Rate: {current_miss_rate:.1%}")  
+    print(f"  Eviction Rate: {current_eviction_rate:.1%}")
+    
+    # Cache sizing recommendations
+    if reuse_distances:
+        optimal_cache_size = np.percentile(reuse_distances, 80)  # 80th percentile
+        print(f"\nCache Sizing Analysis:")
+        print(f"  Current cache size: {CACHE_SIZE_TILES} tiles")
+        print(f"  Recommended cache size: {int(optimal_cache_size)} tiles (80th percentile of reuse)")
+        
+        if optimal_cache_size > CACHE_SIZE_TILES * 1.5:
+            print(f"  ⚠️  RECOMMENDATION: Increase cache size to ~{int(optimal_cache_size)} tiles")
+        elif optimal_cache_size < CACHE_SIZE_TILES * 0.7:
+            print(f"  💡 OPTIMIZATION: Cache could be reduced to ~{int(optimal_cache_size)} tiles")
+        else:
+            print(f"  ✅ Cache size is reasonably optimal")
+    
+    # Access pattern analysis
+    total_unique_tiles = len(tile_keys)
+    working_set_ratio = total_unique_tiles / CACHE_SIZE_TILES if CACHE_SIZE_TILES > 0 else float('inf')
+    
+    print(f"\nWorking Set Analysis:")
+    print(f"  Total unique tiles accessed: {total_unique_tiles}")
+    print(f"  Working set ratio: {working_set_ratio:.1f}x cache size")
+    
+    if working_set_ratio > 4:
+        print(f"  ⚠️  Large working set - consider:")
+        print(f"     • Larger cache size")
+        print(f"     • Better tile scheduling")
+        print(f"     • Hierarchical caching")
+    elif working_set_ratio < 1.5:
+        print(f"  💡 Small working set - cache may be oversized")
+    
+    # Eviction algorithm analysis
+    if eviction_intervals:
+        eviction_frequency = len(eviction_intervals) / len(log) if log else 0
+        print(f"\nEviction Algorithm Analysis:")
+        print(f"  Eviction frequency: {eviction_frequency:.3f} per operation")
+        print(f"  Average interval: {np.mean(eviction_intervals):.1f} operations")
+        
+        if eviction_frequency > 0.1:
+            print(f"  ⚠️  High eviction frequency - consider larger cache or better algorithm")
+        elif eviction_frequency < 0.01:
+            print(f"  💡 Low eviction frequency - cache may be oversized")
+        else:
+            print(f"  ✅ Reasonable eviction frequency")
+
+    print(f"\nArchitectural Recommendations:")
+    if current_hit_rate < 0.6:
+        print(f"  🔧 Priority 1: Improve hit rate (currently {current_hit_rate:.1%})")
+        print(f"     • Increase cache size")
+        print(f"     • Improve prefetching")
+        print(f"     • Better tile ordering")
+    
+    if current_eviction_rate > 0.15:
+        print(f"  🔧 Priority 2: Reduce eviction overhead (currently {current_eviction_rate:.1%})")
+        print(f"     • Larger cache to reduce pressure")
+        print(f"     • More efficient eviction algorithm")
+    
+    if working_set_ratio > 3:
+        print(f"  🔧 Priority 3: Address large working set")
+        print(f"     • Implement tile clustering")
+        print(f"     • Add second-level cache")
+        print(f"     • Optimize computation order")
 
     # --- 5. Cleanup ---
     A_handle.close()
