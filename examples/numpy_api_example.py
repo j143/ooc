@@ -36,7 +36,7 @@ def example_basic_operations():
     # Compute the result
     result = c.compute()
     print(f"\nComputed result:")
-    print(result._materialize())
+    print(result.to_numpy())
     
     print()
 
@@ -53,13 +53,13 @@ def example_scalar_multiplication():
     c2 = 2 * a
     
     print("Array a:")
-    print(a._materialize())
+    print(a.to_numpy())
     
     print("\nResult of a * 2:")
-    print(c1.compute()._materialize())
+    print(c1.compute().to_numpy())
     
     print("\nResult of 2 * a:")
-    print(c2.compute()._materialize())
+    print(c2.compute().to_numpy())
     
     print()
 
@@ -74,15 +74,15 @@ def example_matrix_multiplication():
     b = pnp.array([[7, 8], [9, 10], [11, 12]], dtype=np.float32)  # 3x2
     
     print(f"Matrix a: shape={a.shape}")
-    print(a._materialize())
+    print(a.to_numpy())
     
     print(f"\nMatrix b: shape={b.shape}")
-    print(b._materialize())
+    print(b.to_numpy())
     
     # Matrix multiplication using @ operator
     c = a @ b
     print(f"\nResult of a @ b: shape={c.shape}")
-    print(c.compute()._materialize())
+    print(c.compute().to_numpy())
     
     print()
 
@@ -106,7 +106,7 @@ def example_chained_operations():
     # Execute the entire computation plan
     result = c.compute()
     print("\nComputed result:")
-    print(result._materialize())
+    print(result.to_numpy())
     
     # Note: The framework automatically optimizes this!
     # The fused kernel performs addition and scalar multiplication in one pass
@@ -122,22 +122,22 @@ def example_array_creation_functions():
     # Zeros array
     zeros = pnp.zeros((3, 4))
     print("Zeros array (3x4):")
-    print(zeros._materialize())
+    print(zeros.to_numpy())
     
     # Ones array
     ones = pnp.ones((2, 3))
     print("\nOnes array (2x3):")
-    print(ones._materialize())
+    print(ones.to_numpy())
     
     # Identity matrix
     identity = pnp.eye(4)
     print("\nIdentity matrix (4x4):")
-    print(identity._materialize())
+    print(identity.to_numpy())
     
     # Random array
     random = pnp.random_rand((2, 2))
     print("\nRandom array (2x2) - values in [0, 1):")
-    print(random._materialize())
+    print(random.to_numpy())
     
     print()
 
@@ -150,13 +150,13 @@ def example_transpose():
     a = pnp.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32)
     
     print("Original array (2x3):")
-    print(a._materialize())
+    print(a.to_numpy())
     
     # Transpose using .T property
     a_t = a.T
     
     print(f"\nTransposed array (3x2):")
-    print(a_t._materialize())
+    print(a_t.to_numpy())
     
     print()
 
@@ -182,7 +182,7 @@ def example_file_operations():
     print(f"\nLoading array from: {save_path}")
     loaded = pnp.load(save_path, shape=(2, 3))
     print("Loaded array:")
-    print(loaded._materialize())
+    print(loaded.to_numpy())
     
     # Cleanup
     import shutil

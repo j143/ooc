@@ -17,10 +17,10 @@ a = pnp.array([[1, 2], [3, 4]], dtype=np.float32)
 b = pnp.array([[5, 6], [7, 8]], dtype=np.float32)
 
 print("Array a:")
-print(a._materialize())
+print(a.to_numpy())
 
 print("\nArray b:")
-print(b._materialize())
+print(b.to_numpy())
 
 # Build a computation plan (lazy evaluation)
 result = (a + b) * 2
@@ -32,6 +32,6 @@ print(f"Shape: {result.shape}")
 computed = result.compute()
 
 print("\nComputed result:")
-print(computed._materialize())
+print(computed.to_numpy())
 
 print("\n✓ Success! The NumPy-compatible API works seamlessly.")

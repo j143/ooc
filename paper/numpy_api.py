@@ -124,6 +124,8 @@ class ndarray:
         """
         Materialize the lazy computation into an actual NumPy array.
         Warning: This loads the entire array into memory.
+        
+        Internal method. Use to_numpy() for public API.
         """
         if self._is_lazy:
             # Compute the plan
@@ -138,6 +140,30 @@ class ndarray:
         else:
             # Already materialized
             return np.array(self._matrix.data, copy=True)
+    
+    def to_numpy(self) -> np.ndarray:
+        """
+        Convert the array to a NumPy array.
+        
+        This method materializes the array, loading it into memory.
+        For lazy arrays, this executes the computation plan first.
+        
+        Returns:
+            np.ndarray: A NumPy array containing the data
+            
+        Warning:
+            This loads the entire array into memory and may fail for
+            very large arrays that don't fit in RAM.
+        
+        Examples:
+            >>> import paper.numpy_api as pnp
+            >>> a = pnp.array([[1, 2], [3, 4]])
+            >>> numpy_arr = a.to_numpy()
+            >>> print(numpy_arr)
+            [[1. 2.]
+             [3. 4.]]
+        """
+        return self._materialize()
     
     def compute(self, output_path: Optional[str] = None, cache_size_tiles: Optional[int] = None):
         """
