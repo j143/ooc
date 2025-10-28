@@ -7,3 +7,11 @@ data/
 test_data*
 benchmark_data/
 visualize_data*
+dask_benchmark_data/
+real_data/
+
+# Data files
+*.bin
+*.dat
+*.hdf5
+*.h5
