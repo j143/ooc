@@ -49,7 +49,7 @@ class TestNumpyAPIArrayCreation(unittest.TestCase):
         self.assertEqual(arr.dtype, np.float32)
         
         # Verify data correctness
-        materialized = arr._materialize()
+        materialized = arr.to_numpy()
         np.testing.assert_array_equal(materialized, np_arr)
     
     def test_array_creation_with_dtype(self):
@@ -67,7 +67,7 @@ class TestNumpyAPIArrayCreation(unittest.TestCase):
         self.assertEqual(arr.dtype, np.float32)
         
         # Verify all zeros
-        materialized = arr._materialize()
+        materialized = arr.to_numpy()
         np.testing.assert_array_equal(materialized, np.zeros((3, 4), dtype=np.float32))
     
     def test_ones_creation(self):
@@ -77,7 +77,7 @@ class TestNumpyAPIArrayCreation(unittest.TestCase):
         self.assertEqual(arr.shape, (2, 5))
         
         # Verify all ones
-        materialized = arr._materialize()
+        materialized = arr.to_numpy()
         np.testing.assert_array_equal(materialized, np.ones((2, 5), dtype=np.float32))
     
     def test_random_rand_creation(self):
@@ -87,7 +87,7 @@ class TestNumpyAPIArrayCreation(unittest.TestCase):
         self.assertEqual(arr.shape, (3, 3))
         
         # Verify values are in [0, 1)
-        materialized = arr._materialize()
+        materialized = arr.to_numpy()
         self.assertTrue(np.all(materialized >= 0))
         self.assertTrue(np.all(materialized < 1))
     
@@ -98,7 +98,7 @@ class TestNumpyAPIArrayCreation(unittest.TestCase):
         self.assertEqual(arr.shape, (4, 4))
         
         # Verify identity matrix
-        materialized = arr._materialize()
+        materialized = arr.to_numpy()
         np.testing.assert_array_equal(materialized, np.eye(4, dtype=np.float32))
     
     def test_array_properties(self):
@@ -160,7 +160,7 @@ class TestNumpyAPIOperations(unittest.TestCase):
         result = c.compute()
         expected = np.array([[6, 8], [10, 12]], dtype=np.float32)
         
-        materialized = result._materialize()
+        materialized = result.to_numpy()
         np.testing.assert_array_equal(materialized, expected)
     
     def test_scalar_multiplication(self):
@@ -180,8 +180,8 @@ class TestNumpyAPIOperations(unittest.TestCase):
         result2 = c2.compute()
         expected = np.array([[2, 4], [6, 8]], dtype=np.float32)
         
-        np.testing.assert_array_equal(result1._materialize(), expected)
-        np.testing.assert_array_equal(result2._materialize(), expected)
+        np.testing.assert_array_equal(result1.to_numpy(), expected)
+        np.testing.assert_array_equal(result2.to_numpy(), expected)
     
     def test_matrix_multiplication(self):
         """Test matrix multiplication."""
@@ -198,7 +198,7 @@ class TestNumpyAPIOperations(unittest.TestCase):
         result = c.compute()
         expected = np.array([[1, 2], [3, 4]], dtype=np.float32) @ np.array([[5, 6], [7, 8]], dtype=np.float32)
         
-        materialized = result._materialize()
+        materialized = result.to_numpy()
         np.testing.assert_array_almost_equal(materialized, expected, decimal=5)
     
     def test_chained_operations(self):
@@ -216,7 +216,7 @@ class TestNumpyAPIOperations(unittest.TestCase):
         expected = (np.array([[1, 2], [3, 4]], dtype=np.float32) + 
                    np.array([[5, 6], [7, 8]], dtype=np.float32)) * 2
         
-        materialized = result._materialize()
+        materialized = result.to_numpy()
         np.testing.assert_array_equal(materialized, expected)
     
     def test_matrix_multiplication_different_sizes(self):
@@ -232,7 +232,7 @@ class TestNumpyAPIOperations(unittest.TestCase):
         result = c.compute()
         expected = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32) @ np.array([[7, 8], [9, 10], [11, 12]], dtype=np.float32)
         
-        materialized = result._materialize()
+        materialized = result.to_numpy()
         np.testing.assert_array_almost_equal(materialized, expected, decimal=5)
     
     def test_transpose_operation(self):
@@ -244,7 +244,7 @@ class TestNumpyAPIOperations(unittest.TestCase):
         self.assertEqual(b.shape, (3, 2))
         
         # Verify transpose correctness
-        materialized = b._materialize()
+        materialized = b.to_numpy()
         expected = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32).T
         
         np.testing.assert_array_equal(materialized, expected)
@@ -300,7 +300,7 @@ class TestNumpyAPIFileOperations(unittest.TestCase):
         self.assertEqual(arr.shape, (2, 2))
         
         # Verify data
-        materialized = arr._materialize()
+        materialized = arr.to_numpy()
         np.testing.assert_array_equal(materialized, test_data)
     
     def test_save_array(self):
