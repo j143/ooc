@@ -161,6 +161,8 @@ class MultiplyScalarNode:
                     C.data[r:r_end, c:c_end] = TMP.data[r:r_end, c:c_end] * self.right
             
             C.data.flush()
-            TMP.close()
+            # Only close TMP if it's not from an EagerNode (i.e., it was computed, not an input)
+            if not isinstance(self.left, EagerNode):
+                TMP.close()
             return C
 
