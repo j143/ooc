@@ -39,7 +39,7 @@ The implementation uses an abstract `StorageTier` base class that defines the in
 
 Orchestrates the three-tier hierarchy:
 
-```python
+```
 RAM (64 tiles)
   ↓ demotion on eviction
   ↑ promotion on access
@@ -182,8 +182,8 @@ The demo includes:
 - **Disk I/O (Miss)**: ~10ms
 
 ### Scalability
-- **Single-tier (RAM only)**: Limited by available memory (~64GB typical)
-- **Two-tier (RAM + SSD)**: Limited by SSD capacity (~1TB typical)
+- **Single-tier (RAM only)**: Limited by available memory (e.g., 64GB typical in 2024)
+- **Two-tier (RAM + SSD)**: Limited by SSD capacity (e.g., 1TB typical in 2024)
 - **Three-tier (RAM + SSD + Network)**: Virtually unlimited (cloud storage)
 
 ## Implementation Details
@@ -201,7 +201,7 @@ The demo includes:
 ### Eviction Policy
 - LRU (Least Recently Used) for all tiers
 - Could be extended to support other policies (LFU, ARC, etc.)
-- Optimal eviction (Belady's algorithm) could be integrated with I/O trace
+- Optimal eviction (Belady's algorithm - the theoretically optimal page replacement algorithm that evicts the page whose next use is furthest in the future) could be integrated with I/O trace
 
 ## Future Enhancements
 
