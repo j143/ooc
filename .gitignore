@@ -4,7 +4,8 @@ __pycache__/
 *$py.class
 
 data/
-test_data*
+test_data/
+test_data_*/
 benchmark_data/
 visualize_data*
 dask_benchmark_data/
