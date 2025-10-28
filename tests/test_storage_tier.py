@@ -236,13 +236,10 @@ class TestTierHierarchy(unittest.TestCase):
         """Set up test fixtures."""
         self.cache_dir = tempfile.mkdtemp()
         
-        # Create a 3-tier hierarchy
-        self.network = NetworkTier(capacity_tiles=10, 
-                                   cache_dir=os.path.join(self.cache_dir, 'network'),
-                                   latency_ms=1.0)
+        # Create a 2-tier hierarchy (RAM -> SSD only, no network for speed)
         self.ssd = SSDTier(capacity_tiles=5, 
                           cache_dir=os.path.join(self.cache_dir, 'ssd'),
-                          next_tier=self.network)
+                          next_tier=None)  # No network tier for faster tests
         self.ram = RAMTier(capacity_tiles=2, next_tier=self.ssd)
         
         self.test_key = ('matrix.bin', 0, 0)

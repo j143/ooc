@@ -191,8 +191,8 @@ class RAMTier(StorageTier):
         # Demote to next tier if available
         if self.next_tier is not None:
             self.next_tier.put(lru_key, data)
-            with self.lock:
-                self.demotions += 1
+            # Don't acquire lock here - called from within lock
+            self.demotions += 1
         
         # Remove from this tier
         del self.cache[lru_key]
@@ -285,8 +285,8 @@ class SSDTier(StorageTier):
             # Demote to next tier if available
             if self.next_tier is not None:
                 self.next_tier.put(lru_key, data)
-                with self.lock:
-                    self.demotions += 1
+                # Don't acquire lock here - called from within lock
+                self.demotions += 1
             
             # Remove file
             os.remove(filepath)
