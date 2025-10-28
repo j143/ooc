@@ -10,6 +10,44 @@ The architecture is inspired by modern data systems and academic research (e.g.,
 ![Framework architecture](/paper-architecture.svg "Architecture")
 
 
+### Hierarchical Memory Management
+
+Paper now supports multi-tier caching (RAM → SSD → Network) for scaling beyond single-machine limits. The hierarchical buffer manager automatically manages data movement across tiers:
+
+- **RAM Tier**: Fast in-memory cache (smallest capacity)
+- **SSD Tier**: Local disk-based cache (medium capacity)
+- **Network Tier**: Remote storage simulation (largest capacity)
+
+Data is automatically promoted from slower tiers to faster tiers on access, and demoted when space is needed.
+
+```python
+from paper.hierarchical_buffer import HierarchicalBufferManager
+from paper.core import PaperMatrix
+from paper.backend import add
+
+# Create hierarchical buffer manager
+buffer_mgr = HierarchicalBufferManager(
+    ram_capacity_tiles=64,      # 64 tiles in RAM
+    ssd_capacity_tiles=256,     # 256 tiles on SSD
+    network_capacity_tiles=1024, # 1024 tiles in network storage
+    network_latency_ms=50.0     # Simulated network latency
+)
+
+# Use with matrix operations
+A = PaperMatrix("A.bin", shape=(8192, 8192))
+B = PaperMatrix("B.bin", shape=(8192, 8192))
+C = add(A, B, "C.bin", buffer_mgr)
+
+# View performance metrics
+buffer_mgr.print_metrics()
+```
+
+Run the demo to see hierarchical caching in action:
+
+```bash
+python demo_hierarchical.py
+```
+
 ### Testing
 
 ```bash
@@ -20,6 +58,11 @@ python ./tests/run_tests.py
 python ./tests/run_tests.py addition
 python ./tests/run_tests.py fused
 python ./tests/run_tests.py scalar
+
+# Run hierarchical memory management tests
+python -m unittest tests.test_storage_tier
+python -m unittest tests.test_hierarchical_buffer
+python -m unittest tests.test_hierarchical_system
 ```
 
 ### Buffer Manager architecture
