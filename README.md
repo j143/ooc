@@ -24,7 +24,7 @@ c = (a + b) * 2
 
 # Execute the computation plan
 result = c.compute()
-print(result._materialize())
+print(result.to_numpy())
 ```
 
 ### Key Features

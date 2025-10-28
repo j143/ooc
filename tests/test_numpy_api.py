@@ -109,6 +109,28 @@ class TestNumpyAPIArrayCreation(unittest.TestCase):
         self.assertEqual(arr.ndim, 2)
         self.assertEqual(arr.size, 6)
         self.assertEqual(arr.dtype, np.float32)
+    
+    def test_to_numpy_method(self):
+        """Test to_numpy() method for converting to NumPy arrays."""
+        # Test with materialized array
+        arr = pnp.array([[1, 2], [3, 4]], dtype=np.float32)
+        numpy_arr = arr.to_numpy()
+        
+        self.assertIsInstance(numpy_arr, np.ndarray)
+        expected = np.array([[1, 2], [3, 4]], dtype=np.float32)
+        np.testing.assert_array_equal(numpy_arr, expected)
+        
+        # Test with lazy array
+        a = pnp.array([[1, 2], [3, 4]], dtype=np.float32)
+        b = pnp.array([[5, 6], [7, 8]], dtype=np.float32)
+        c = a + b
+        
+        self.assertTrue(c._is_lazy)
+        numpy_result = c.to_numpy()
+        
+        self.assertIsInstance(numpy_result, np.ndarray)
+        expected_lazy = np.array([[6, 8], [10, 12]], dtype=np.float32)
+        np.testing.assert_array_equal(numpy_result, expected_lazy)
 
 
 class TestNumpyAPIOperations(unittest.TestCase):
