@@ -1,6 +1,6 @@
 # Paper framework
 
-Paper a lightweight Python framework for performing matrix computations on datasets that are too large to fit into main memory. It is designed around the principle of lazy evaluation, which allows it to build a computation plan and apply powerful optimizations, such as operator fusion, before executing any costly I/O operations.
+Paper is a lightweight Python framework for performing matrix computations on datasets that are too large to fit into main memory. It is designed around the principle of lazy evaluation, which allows it to build a computation plan and apply powerful optimizations, such as operator fusion, before executing any costly I/O operations.
 
 The architecture is inspired by modern data systems and academic research (e.g., PreVision), with a clear separation between the logical plan, the physical execution backend, and an intelligent optimizer.
 
@@ -73,7 +73,7 @@ python -m unittest tests.test_core
 python -m unittest tests.test_fusion_operations
 ```
 
-### Examples
+### Running Examples
 
 ```bash
 # Run OOCMatrix examples
