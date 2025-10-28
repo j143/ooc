@@ -3,6 +3,8 @@
 ## Overview
 This document summarizes the implementation of the NumPy-compatible API layer for the Paper framework. The goal was to provide a familiar NumPy interface while leveraging Paper's out-of-core capabilities for datasets larger than memory.
 
+**Current Limitation:** The implementation currently supports **2D matrices only** (NumPy's ndarray supports N dimensions). This is a foundational version focused on the most common use case for matrix operations. Future enhancements may add full N-dimensional support.
+
 ## Key Components Implemented
 
 ### 1. Core API Module (`paper/numpy_api.py`)
@@ -46,7 +48,7 @@ The main array class that provides NumPy-like interface with lazy evaluation:
 
 ### 2. Bug Fix (`paper/plan.py`)
 
-**Issue:** Scalar multiplication was closing input matrices from EagerNodes, causing segmentation faults on reuse.
+**Issue:** During implementation, we discovered a pre-existing bug in the scalar multiplication logic where matrices from EagerNodes were being closed prematurely, causing segmentation faults on reuse. This bug existed in the original codebase but became apparent when implementing reusable lazy operations in the NumPy API.
 
 **Fix:** Added check to only close intermediate computed results:
 ```python
