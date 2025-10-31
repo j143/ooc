@@ -224,6 +224,26 @@ class ndarray:
         """Right scalar multiplication."""
         return self.__mul__(other)
     
+    def __sub__(self, other: Union['ndarray', int, float]) -> 'ndarray':
+        """Element-wise subtraction."""
+        if isinstance(other, (int, float)):
+            # Scalar subtraction: A - scalar = A + (-scalar)
+            new_plan = self._plan * 1.0 + self._plan * 0.0  # Identity operation
+            # For now, use scalar multiplication with -1 and add
+            # This is a workaround since we don't have scalar addition
+            raise NotImplementedError("Scalar subtraction not yet fully implemented")
+        
+        if not isinstance(other, ndarray):
+            raise TypeError(f"Unsupported operand type for -: 'ndarray' and '{type(other).__name__}'")
+        
+        if self.shape != other.shape:
+            raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}")
+        
+        # A - B = A + (-1 * B)
+        neg_other_plan = other._plan * (-1.0)
+        new_plan = self._plan + neg_other_plan
+        return ndarray._from_plan(new_plan, self.shape, self.dtype)
+    
     def __matmul__(self, other: 'ndarray') -> 'ndarray':
         """Matrix multiplication."""
         if not isinstance(other, ndarray):

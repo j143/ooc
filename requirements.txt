@@ -3,6 +3,8 @@ numpy
 h5py
 
 # ML task dependencies
+# scikit-learn used only for utilities (train_test_split, metrics)
+# ML algorithms (linear/logistic regression) implemented using Paper's operators
 scikit-learn
 
 # Benchmarking dependencies

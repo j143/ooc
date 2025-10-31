@@ -1,10 +1,19 @@
-# Machine Learning Task: Gene Expression Classification
+# Machine Learning Task: Gene Expression Classification Using Paper's Operators
 
 ## Overview
 
-This implementation adds a complete **gene expression classification** workflow to the Paper framework, demonstrating real-world ML problem-solving beyond infrastructure benchmarking.
+This implementation adds a complete **gene expression classification** workflow to the Paper framework, demonstrating real-world ML problem-solving **using Paper's out-of-core matrix operators** instead of external ML libraries. This benchmarks Paper's capability to handle ML workloads directly.
 
 ## What Was Implemented
+
+### Paper ML Module (`paper_ml.py`)
+
+Core ML algorithms implemented using **only Paper's operators**:
+
+- **LinearRegressionPaper**: Linear regression using gradient descent with Paper's matrix operations
+- **LogisticRegressionPaper**: Logistic regression using gradient descent with Paper's operators
+- **Operators Used**: Matrix multiplication (@), transpose (.T), scalar multiplication (*), addition (+), subtraction (-)
+- **No external ML libraries** used for algorithms (scikit-learn only for utilities like train_test_split)
 
 ### ML Classification Module (`ml_classification.py`)
 
@@ -12,9 +21,9 @@ A comprehensive module providing:
 
 - **Label Generation**: Create synthetic disease/control labels for classification tasks
 - **Data Loading**: Load gene expression data using Paper or Dask frameworks
-- **Model Training**: Train logistic regression classifier on gene expression features
+- **Model Training**: Train classifiers using **Paper's operators** (implemented in paper_ml.py)
 - **Model Evaluation**: Compute accuracy, ROC AUC, and other metrics
-- **Framework Comparison**: Side-by-side comparison of Paper vs Dask on complete ML pipeline
+- **Framework Comparison**: Benchmark Paper's ML workload performance vs Dask
 
 ### Test Suite (`tests/test_ml_classification.py`)
 

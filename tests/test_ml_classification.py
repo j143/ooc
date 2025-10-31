@@ -1,5 +1,5 @@
 """
-Tests for ML classification functionality.
+Tests for ML classification functionality using Paper's operators.
 """
 
 import unittest
@@ -11,15 +11,12 @@ import sys
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from ml_classification import (
-    generate_classification_labels,
-    train_classifier,
-    evaluate_classifier
-)
+from ml_classification import generate_classification_labels
+from paper_ml import LinearRegressionPaper, LogisticRegressionPaper, prepare_data_for_paper
 
 
 class TestMLClassification(unittest.TestCase):
-    """Test ML classification utilities."""
+    """Test ML classification utilities with Paper operators."""
     
     def test_generate_labels_shape(self):
         """Test that generated labels have correct shape."""
@@ -62,94 +59,117 @@ class TestMLClassification(unittest.TestCase):
         # Should not be identical
         self.assertFalse(np.array_equal(labels1, labels2))
     
-    def test_train_classifier_basic(self):
-        """Test that classifier can be trained."""
+    def test_linear_regression_training(self):
+        """Test that linear regression can be trained with Paper operators."""
         # Create simple synthetic data
         np.random.seed(42)
-        n_samples = 100
-        n_features = 10
+        n_samples = 50
+        n_features = 3
         
-        X_train = np.random.randn(n_samples, n_features).astype(np.float32)
-        y_train = (X_train[:, 0] > 0).astype(np.int32)  # Simple linear separable
+        X_np = np.random.randn(n_samples, n_features).astype(np.float32)
+        true_weights = np.array([[1.0], [2.0], [-0.5]], dtype=np.float32)
+        y_np = X_np @ true_weights + np.random.randn(n_samples, 1).astype(np.float32) * 0.1
         
-        clf = train_classifier(X_train, y_train, max_iter=100)
+        X_paper, y_paper = prepare_data_for_paper(X_np, y_np)
         
-        # Check that classifier was trained
-        self.assertTrue(hasattr(clf, 'coef_'))
-        self.assertTrue(hasattr(clf, 'intercept_'))
+        # Train model
+        model = LinearRegressionPaper(learning_rate=0.1, n_iterations=20)
+        model.fit(X_paper, y_paper, verbose=False)
+        
+        # Check that model has weights
+        self.assertIsNotNone(model.weights)
+        
+        # Check that predictions work
+        y_pred = model.predict(X_paper)
+        self.assertIsNotNone(y_pred)
     
-    def test_train_classifier_predictions(self):
-        """Test that trained classifier can make predictions."""
-        np.random.seed(42)
-        n_samples = 100
-        n_features = 10
-        
-        X_train = np.random.randn(n_samples, n_features).astype(np.float32)
-        y_train = (X_train[:, 0] > 0).astype(np.int32)
-        
-        clf = train_classifier(X_train, y_train, max_iter=100)
-        
-        # Make predictions
-        X_test = np.random.randn(20, n_features).astype(np.float32)
-        predictions = clf.predict(X_test)
-        
-        # Check predictions are valid
-        self.assertEqual(len(predictions), 20)
-        self.assertTrue(np.all((predictions == 0) | (predictions == 1)))
-    
-    def test_evaluate_classifier_metrics(self):
-        """Test that evaluation returns expected metrics."""
-        np.random.seed(42)
-        n_samples = 100
-        n_features = 10
-        
-        # Create linearly separable data
-        X_train = np.random.randn(n_samples, n_features).astype(np.float32)
-        y_train = (X_train[:, 0] > 0).astype(np.int32)
-        
-        X_test = np.random.randn(50, n_features).astype(np.float32)
-        y_test = (X_test[:, 0] > 0).astype(np.int32)
-        
-        clf = train_classifier(X_train, y_train, max_iter=100)
-        metrics = evaluate_classifier(clf, X_test, y_test)
-        
-        # Check that metrics are returned
-        self.assertIn('accuracy', metrics)
-        self.assertIn('roc_auc', metrics)
-        
-        # Check that metrics are in valid range
-        self.assertGreaterEqual(metrics['accuracy'], 0.0)
-        self.assertLessEqual(metrics['accuracy'], 1.0)
-        self.assertGreaterEqual(metrics['roc_auc'], 0.0)
-        self.assertLessEqual(metrics['roc_auc'], 1.0)
-        
-        # For linearly separable data, accuracy should be high
-        self.assertGreater(metrics['accuracy'], 0.7)
-        self.assertGreater(metrics['roc_auc'], 0.7)
-    
-    def test_evaluate_classifier_perfect_prediction(self):
-        """Test evaluation with perfect predictions."""
+    def test_linear_regression_score(self):
+        """Test that linear regression scoring works."""
         np.random.seed(42)
         n_samples = 50
-        n_features = 10
+        n_features = 3
         
-        # Create perfectly separable data
-        X_train = np.random.randn(n_samples, n_features).astype(np.float32)
-        X_train[:25, 0] = 10  # Class 1
-        X_train[25:, 0] = -10  # Class 0
-        y_train = np.array([1] * 25 + [0] * 25, dtype=np.int32)
+        X_np = np.random.randn(n_samples, n_features).astype(np.float32)
+        true_weights = np.array([[1.0], [2.0], [-0.5]], dtype=np.float32)
+        y_np = X_np @ true_weights + np.random.randn(n_samples, 1).astype(np.float32) * 0.1
         
-        X_test = np.random.randn(20, n_features).astype(np.float32)
-        X_test[:10, 0] = 10  # Class 1
-        X_test[10:, 0] = -10  # Class 0
-        y_test = np.array([1] * 10 + [0] * 10, dtype=np.int32)
+        X_paper, y_paper = prepare_data_for_paper(X_np, y_np)
         
-        clf = train_classifier(X_train, y_train, max_iter=100)
-        metrics = evaluate_classifier(clf, X_test, y_test)
+        # Train model
+        model = LinearRegressionPaper(learning_rate=0.1, n_iterations=30)
+        model.fit(X_paper, y_paper, verbose=False)
         
-        # Should have perfect or near-perfect accuracy
-        self.assertGreater(metrics['accuracy'], 0.95)
-        self.assertGreater(metrics['roc_auc'], 0.95)
+        # Compute R² score
+        r2 = model.score(X_paper, y_paper)
+        
+        # R² should be reasonable for this linearly generated data
+        self.assertGreater(r2, 0.5)
+    
+    def test_logistic_regression_training(self):
+        """Test that logistic regression can be trained with Paper operators."""
+        np.random.seed(42)
+        n_samples = 50
+        n_features = 3
+        
+        X_np = np.random.randn(n_samples, n_features).astype(np.float32)
+        # Create separable classes
+        y_np = (X_np[:, 0] > 0).astype(np.float32).reshape(-1, 1)
+        
+        X_paper, y_paper = prepare_data_for_paper(X_np, y_np)
+        
+        # Train model
+        model = LogisticRegressionPaper(learning_rate=0.1, n_iterations=20)
+        model.fit(X_paper, y_paper, verbose=False)
+        
+        # Check that model has weights
+        self.assertIsNotNone(model.weights)
+    
+    def test_logistic_regression_predict(self):
+        """Test that logistic regression predictions work."""
+        np.random.seed(42)
+        n_samples = 50
+        n_features = 3
+        
+        X_np = np.random.randn(n_samples, n_features).astype(np.float32)
+        y_np = (X_np[:, 0] > 0).astype(np.float32).reshape(-1, 1)
+        
+        X_paper, y_paper = prepare_data_for_paper(X_np, y_np)
+        
+        # Train model
+        model = LogisticRegressionPaper(learning_rate=0.1, n_iterations=30)
+        model.fit(X_paper, y_paper, verbose=False)
+        
+        # Make predictions
+        y_pred = model.predict(X_paper)
+        
+        # Check prediction shape
+        self.assertEqual(y_pred.shape, y_np.shape)
+        
+        # Check that predictions are binary
+        unique_preds = np.unique(y_pred)
+        self.assertTrue(np.all(np.isin(unique_preds, [0, 1])))
+    
+    def test_logistic_regression_accuracy(self):
+        """Test that logistic regression achieves reasonable accuracy."""
+        np.random.seed(42)
+        n_samples = 100
+        n_features = 5
+        
+        X_np = np.random.randn(n_samples, n_features).astype(np.float32)
+        # Create clearly separable classes
+        y_np = (X_np[:, 0] + X_np[:, 1] > 0).astype(np.float32).reshape(-1, 1)
+        
+        X_paper, y_paper = prepare_data_for_paper(X_np, y_np)
+        
+        # Train model
+        model = LogisticRegressionPaper(learning_rate=0.1, n_iterations=50)
+        model.fit(X_paper, y_paper, verbose=False)
+        
+        # Compute accuracy
+        accuracy = model.score(X_paper, y_paper)
+        
+        # Should achieve good accuracy on separable data
+        self.assertGreater(accuracy, 0.7)
 
 
 def run_tests():

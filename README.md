@@ -202,14 +202,16 @@ See [data_prep/README.md](data_prep/README.md) for detailed documentation.
 
 ### Machine Learning Task: Gene Expression Classification
 
-Paper now includes an end-to-end ML workflow demonstrating real-world problem-solving beyond infrastructure benchmarking.
+Paper now includes an end-to-end ML workflow implementing ML algorithms **using Paper's operators** (matrix multiplication, transpose, addition, subtraction). This demonstrates Paper's capability to handle ML workloads directly, not just as a data loading framework.
 
 **Features:**
 - Complete gene expression classification pipeline
-- Disease vs control classification using logistic regression
+- **ML algorithms implemented using Paper's out-of-core operators** (logistic regression via gradient descent)
+- Disease vs control classification
 - Performance metrics: accuracy, ROC AUC
 - Side-by-side comparison of Paper vs Dask on ML tasks
 - Reproducible results with seed control
+- **Benchmarks Paper's ML workload capability**, not external ML libraries
 
 **Quick Start:**
 ```bash
