@@ -1,5 +1,10 @@
+# Core dependencies
 numpy
 h5py
+
+# ML task dependencies
 scikit-learn
+
+# Benchmarking dependencies
 dask[array]
 psutil

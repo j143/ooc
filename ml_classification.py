@@ -283,10 +283,10 @@ def compare_ml_frameworks(
         random_seed=random_seed
     )
     
-    # Run with Dask
+    # Run with Dask (data_path not used, only hdf5_path is used)
     dask_metrics, dask_time = run_ml_pipeline(
-        paper_data_path,  # Not used
-        shape,
+        data_path="",  # Not used when use_paper=False
+        shape=shape,
         use_paper=False,
         test_size=test_size,
         random_seed=random_seed,
