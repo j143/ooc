@@ -200,6 +200,49 @@ python benchmarks/benchmark_dask.py --use-real-data --data-dir real_data
 
 See [data_prep/README.md](data_prep/README.md) for detailed documentation.
 
+### Machine Learning Task: Gene Expression Classification
+
+Paper now includes an end-to-end ML workflow demonstrating real-world problem-solving beyond infrastructure benchmarking.
+
+**Features:**
+- Complete gene expression classification pipeline
+- Disease vs control classification using logistic regression
+- Performance metrics: accuracy, ROC AUC
+- Side-by-side comparison of Paper vs Dask on ML tasks
+- Reproducible results with seed control
+
+**Quick Start:**
+```bash
+# Generate dataset
+python -m data_prep.download_dataset --output-dir ml_data --size small
+
+# Run ML classification with Paper
+python ml_classification.py --data-path ml_data/gene_expression.dat --shape 5000 5000
+
+# Compare Paper vs Dask on ML task
+python ml_classification.py \
+  --data-path ml_data/gene_expression.dat \
+  --shape 5000 5000 \
+  --hdf5-path ml_data/data.hdf5 \
+  --compare
+```
+
+**Example Output:**
+```
+ML PIPELINE COMPARISON: Paper vs. Dask/HDF5
+======================================================================
+Metric                         | Paper           | Dask/HDF5      
+----------------------------------------------------------------------
+Total Time (s)                 | 1.99            | 1.86           
+Accuracy                       | 0.4970          | 0.4970         
+ROC AUC                        | 0.5074          | 0.5074         
+----------------------------------------------------------------------
+Paper Speedup                  | 0.93x           |
+======================================================================
+```
+
+This demonstrates **actionable ML results** with real datasets, not just computational benchmarking.
+
 ### Results
 
 ![eviction stress](/cache_visualization_eviction_stress_32.png "Buffer Manager")
