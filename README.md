@@ -243,6 +243,18 @@ Paper Speedup                  | 0.93x           |
 
 This demonstrates **actionable ML results** with real datasets, not just computational benchmarking.
 
+**Complete Example:**
+```bash
+# Run the comprehensive ML example
+python examples/ml_classification_example.py
+```
+
+This example demonstrates:
+- Complete ML problem-solving workflow (not just benchmarking)
+- Disease classification with real metrics (accuracy, ROC AUC)
+- Framework comparison on actual ML tasks
+- Reproducible results with actionable insights
+
 ### Results
 
 ![eviction stress](/cache_visualization_eviction_stress_32.png "Buffer Manager")
