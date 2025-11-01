@@ -8,6 +8,13 @@ Paper provides a lightweight framework for performing matrix computations on dat
 
 The architecture is inspired by modern data systems and academic research (e.g., PreVision), with a clear separation between the logical plan, the physical execution backend, and an intelligent optimizer.
 
+## Quick Links
+
+- 📚 **[Integration Guide](INTEGRATION_GUIDE.md)** - How to use Paper with sklearn, PyTorch, and NumPy
+- 🔬 **[Examples](examples/)** - Working code for sklearn and PyTorch integration
+- 📊 **[Benchmarks](#benchmarks)** - Performance comparisons showing 1.88x speedup
+- 🏗️ **[Architecture](#architecture)** - How Paper fits into your application
+
 ## What Paper Does (and Doesn't Do)
 
 **Paper optimizes I/O for:**
