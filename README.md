@@ -12,6 +12,7 @@ The architecture is inspired by modern data systems and academic research (e.g.,
 
 - 📚 **[Integration Guide](INTEGRATION_GUIDE.md)** - How to use Paper with sklearn, PyTorch, and NumPy
 - 🔬 **[Examples](examples/)** - Working code for sklearn and PyTorch integration
+  - 🎯 **[PyTorch Real-World Example](examples/pytorch_mnist_example.py)** - Complete image classification workflow
 - 📊 **[Benchmarks](#benchmarks)** - Performance comparisons showing 1.88x speedup
 - 🏗️ **[Architecture](#architecture)** - How Paper fits into your application
 
@@ -83,17 +84,29 @@ print(result.to_numpy())
 
 ### Examples
 
-See `examples/numpy_api_example.py` for comprehensive examples demonstrating:
+**Real-World PyTorch Example** - Complete image classification workflow:
+```bash
+python examples/pytorch_mnist_example.py
+```
+This demonstrates:
+- Loading 100k+ images that don't fit in RAM
+- Preprocessing with Paper's optimized I/O
+- Training a PyTorch CNN with standard DataLoader
+- Batch inference on new data
+- Medical imaging scenario (tumor detection)
+
+See **[examples/README_PYTORCH.md](examples/README_PYTORCH.md)** for detailed documentation.
+
+**NumPy API Examples** - See `examples/numpy_api_example.py`:
 - Basic array operations
 - Chained operations with lazy evaluation
 - Matrix multiplication
 - File I/O
 - Large array handling (out-of-core)
 
-Run the examples:
-```bash
-python examples/numpy_api_example.py
-```
+**Integration Examples**:
+- `examples/integration_sklearn.py` - sklearn pipeline integration
+- `examples/integration_pytorch.py` - PyTorch conceptual overview
 
 ### Architecture
 
