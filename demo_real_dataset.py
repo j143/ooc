@@ -161,6 +161,37 @@ Example:
     if returncode != 0:
         print("\n⚠️  Synthetic benchmark failed (optional)")
     
+    # Step 5: Run ML classification task
+    print("\n🧠 STEP 5: Running ML Classification Task")
+    print("-" * 70)
+    
+    # Determine shape from size
+    size_to_shape_tuple = {
+        'small': (5000, 5000),
+        'medium': (10000, 10000),
+        'large': (20000, 10000)
+    }
+    
+    shape_tuple = size_to_shape_tuple.get(args.size, (5000, 5000))
+    
+    ml_cmd = [
+        sys.executable,
+        'ml_classification.py',
+        '--data-path', os.path.join(args.output_dir, 'gene_expression.dat'),
+        '--shape', str(shape_tuple[0]), str(shape_tuple[1]),
+        '--hdf5-path', os.path.join(args.output_dir, 'data.hdf5'),
+        '--compare',
+        '--seed', '42'
+    ]
+    
+    returncode = run_command(
+        ml_cmd,
+        "Running Gene Expression Classification (Paper vs Dask)"
+    )
+    
+    if returncode != 0:
+        print("\n⚠️  ML classification task failed (optional)")
+    
     # Summary
     print("\n" + "="*70)
     print("✅ DEMONSTRATION COMPLETE!")
@@ -170,9 +201,12 @@ Example:
     print("  • Data validation: Automatic integrity checking")
     print("  • Benchmarking: Easy comparison between frameworks")
     print("  • Performance: Paper shows competitive/better performance")
+    print("  • ML Task: Complete gene expression classification pipeline")
+    print("  • Actionable Results: Accuracy and ROC AUC metrics reported")
     print("\nNext Steps:")
     print("  • Try different dataset sizes (--size medium/large)")
     print("  • Explore data_prep/ utilities for custom datasets")
+    print("  • Experiment with ml_classification.py for custom tasks")
     print("  • Use Paper framework for your out-of-core computations!")
     
     if args.cleanup:
