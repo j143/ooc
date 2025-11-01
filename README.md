@@ -2,6 +2,8 @@
 
 Paper a lightweight Python framework for performing matrix computations on datasets that are too large to fit into main memory. It is designed around the principle of lazy evaluation, which allows it to build a computation plan and apply powerful optimizations, such as operator fusion, before executing any costly I/O operations.
 
+> When your matrix computation is bottlenecked by I/O (data too large for RAM), Paper's intelligent tiling + prefetching strategy outperforms Dask's lazy evaluation.
+
 The architecture is inspired by modern data systems and academic research (e.g., PreVision), with a clear separation between the logical plan, the physical execution backend, and an intelligent optimizer.
 
 ## NumPy-Compatible API
@@ -70,9 +72,64 @@ python examples/numpy_api_example.py
 
 ### Architecture
 
+#### How it fits in application
+
+Your application (ML, Finance, Science)
+  - sklearn, PyTorch, XGBoost, etc.
+                  ↓
+Paper: I/O optimization layer
+  - Intelligent tiling + prefetching
+  - Lazy evaluation with compute plans
+  - Optimal buffer management (example, Belady inspired...)
+                  ↓
+Storage (HDF5, Binary, S3, etc.)
+  - Paper orchestrates reads, doesn't replace
+
+key: Paper is **transparent** to your application. It replaces I/O, not your business logic.
+
+
+#### Paper architecture
 
 ![Framework architecture](/paper-architecture.svg "Architecture")
 
+### Three committments to guide design
+
+1. Reuse best operations that already exists
+ - Provide matrix operations: @, .T, +, -, /, reductions
+ - Don't implement ML: No Logisitic regression, NN, clustering
+ - Let sklearn, PyTorch, XGBoost do their job
+
+2. Respect user workflows
+ - NumPy users: import paper as pnp (same API, better I/O)
+ - Dask users: Paper handles matrix ops, Dask handles scheduling
+ - sklearn users: Transparent optimization of preprocessing
+ - Doesn't require rewriting existing code
+
+3. Enable production ML workflows
+ - Feature engineering at scale (correlation matrices)
+ - Batch prediction on huge datasets
+ - Iterative solvers (scientific computing)
+ - All using existing frameworks, Paper optimizes I/O
+
+2. Respect User Workflows (Don't Disrupt)
+
+NumPy users: import paper as pnp (same API, better I/O)
+
+Dask users: Paper handles matrix ops, Dask handles scheduling
+
+sklearn users: Transparent optimization of preprocessing
+
+Not: Require rewriting existing code
+
+3. Enable Production ML Workflows (Don't Replace)
+
+Feature engineering at scale (correlation matrices)
+
+Batch prediction on huge datasets
+
+Iterative solvers (scientific computing)
+
+All using existing frameworks, Paper optimizes I/O
 
 ### Testing
 
