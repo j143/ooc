@@ -1,6 +1,6 @@
 
 # from . import optimizer
-from .backend import add
+from .backend import add, subtract
 from .backend import multiply
 from .core import PaperMatrix
 from .backend import execute_fused_add_multiply
@@ -43,6 +43,10 @@ class Plan:
         print("Build an 'AddNode' plan...")
         # return Plan(AddNode(self, x))
         return Plan(AddNode(self.op, x.op))
+    
+    def __sub__(self, x: 'Plan'):
+        print("Build a 'SubNode' plan...")
+        return Plan(SubNode(self.op, x.op))
     
     def __matmul__(self, x: 'Plan'):
         print("Build an 'MultiplyNode' plan")
@@ -95,6 +99,28 @@ class AddNode:
 
         print(" - Calling 'add' to perform the computation...")
         return add(matrix_A, matrix_B, output_path, buffer_manager)
+
+class SubNode:
+    """An operation node representing subtraction in our computation plan."""
+    def __init__(self, left: 'Plan', right: 'Plan'):
+        if left.shape != right.shape:
+            raise ValueError("Shapes must match for lazy subtraction.")
+        self.left = left
+        self.right = right
+        self.shape = left.shape
+    
+    def __repr__(self):
+        return f"SubNode(left={self.left!r}, right={self.right!r})"
+
+    def execute(self, output_path, buffer_manager):
+        """Executes the subtraction plan."""
+        print(" - Execute SubNode: Get inputs...")
+        # Create temporary paths for intermediate results if needed
+        matrix_A = self.left.execute(None if output_path is None else output_path + ".left.tmp", buffer_manager)
+        matrix_B = self.right.execute(None if output_path is None else output_path + ".right.tmp", buffer_manager)
+
+        print(" - Calling 'subtract' to perform the computation...")
+        return subtract(matrix_A, matrix_B, output_path, buffer_manager)
 
 class MultiplyNode:
     """An operation node representing matrix multiplication in our computation plan."""
