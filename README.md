@@ -13,6 +13,7 @@ The architecture is inspired by modern data systems and academic research (e.g.,
 - 📚 **[Integration Guide](INTEGRATION_GUIDE.md)** - How to use Paper with sklearn, PyTorch, and NumPy
 - 🔬 **[Examples](examples/)** - Working code for sklearn and PyTorch integration
   - 🎯 **[PyTorch Real-World Example](examples/pytorch_mnist_example.py)** - Complete image classification workflow
+- 🧪 **[Real Data Experiments](experiments/)** - Actual experiments with gene expression and medical imaging data
 - 📊 **[Benchmarks](#benchmarks)** - Performance comparisons showing 1.88x speedup
 - 🏗️ **[Architecture](#architecture)** - How Paper fits into your application
 
