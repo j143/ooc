@@ -210,6 +210,22 @@ class ndarray:
         new_plan = self._plan + other._plan
         return ndarray._from_plan(new_plan, self.shape, self.dtype)
     
+    def __sub__(self, other: Union['ndarray', int, float]) -> 'ndarray':
+        """Element-wise subtraction."""
+        if isinstance(other, (int, float)):
+            # Scalar subtraction - not yet optimized
+            raise NotImplementedError("Scalar subtraction not yet implemented")
+        
+        if not isinstance(other, ndarray):
+            raise TypeError(f"Unsupported operand type for -: 'ndarray' and '{type(other).__name__}'")
+        
+        if self.shape != other.shape:
+            raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}")
+        
+        # Create lazy subtraction plan
+        new_plan = self._plan - other._plan
+        return ndarray._from_plan(new_plan, self.shape, self.dtype)
+    
     def __mul__(self, other: Union['ndarray', int, float]) -> 'ndarray':
         """Element-wise multiplication or scalar multiplication."""
         if isinstance(other, (int, float)):
