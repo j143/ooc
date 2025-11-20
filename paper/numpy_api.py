@@ -165,6 +165,113 @@ class ndarray:
         """
         return self._materialize()
     
+    def to_torch(self, device: Optional[str] = None):
+        """
+        Convert the array to a PyTorch tensor with efficient memory mapping.
+        
+        This method leverages PyTorch's ability to create tensors from NumPy arrays
+        that share the same memory buffer when possible. For memory-mapped arrays,
+        this provides efficient zero-copy conversion.
+        
+        Args:
+            device: Optional device specification ('cpu', 'cuda', 'cuda:0', etc.).
+                   If None, uses CPU. For GPU devices, data will be copied to device memory.
+        
+        Returns:
+            torch.Tensor: A PyTorch tensor containing the data
+            
+        Raises:
+            ImportError: If PyTorch is not installed
+            
+        Examples:
+            >>> import paper.numpy_api as pnp
+            >>> a = pnp.array([[1, 2], [3, 4]])
+            >>> torch_tensor = a.to_torch()  # CPU tensor
+            >>> cuda_tensor = a.to_torch(device='cuda')  # GPU tensor (if available)
+            
+        Note:
+            - For CPU tensors, PyTorch can share memory with the underlying memory-mapped file
+            - For GPU tensors, data must be copied to device memory
+            - Large arrays may require chunked processing for GPU transfers
+        """
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(
+                "PyTorch is not installed. Install it with: pip install torch"
+            )
+        
+        # For lazy arrays, we need to compute first
+        if self._is_lazy:
+            # Compute to a temporary file
+            materialized = self.compute()
+            return materialized.to_torch(device=device)
+        
+        # For materialized arrays, we can use the memory-mapped data
+        # PyTorch requires writable arrays, so we need to copy for read-only memmaps
+        # However, for write-mode memmaps, we can share memory
+        if device is None or device == 'cpu':
+            # Check if the memmap is writable
+            if self._matrix.data.flags.writeable:
+                # Zero-copy: Share memory with the memmap (efficient)
+                tensor = torch.from_numpy(np.asarray(self._matrix.data))
+            else:
+                # Read-only memmap: Need to copy to avoid PyTorch warnings
+                # This is still efficient as it uses memmap's lazy loading
+                tensor = torch.from_numpy(np.array(self._matrix.data, copy=True))
+            return tensor
+        else:
+            # For GPU devices, we need to copy data anyway
+            # Use the memmap data and copy to device
+            if self._matrix.data.flags.writeable:
+                cpu_tensor = torch.from_numpy(np.asarray(self._matrix.data))
+            else:
+                cpu_tensor = torch.from_numpy(np.array(self._matrix.data, copy=True))
+            # Transfer to specified device
+            return cpu_tensor.to(device)
+    
+    def to_tensorflow(self):
+        """
+        Convert the array to a TensorFlow tensor with efficient memory mapping.
+        
+        This method leverages TensorFlow's ability to create tensors from NumPy arrays.
+        For memory-mapped arrays, TensorFlow can efficiently work with the data.
+        
+        Returns:
+            tf.Tensor: A TensorFlow tensor containing the data
+            
+        Raises:
+            ImportError: If TensorFlow is not installed
+            
+        Examples:
+            >>> import paper.numpy_api as pnp
+            >>> a = pnp.array([[1, 2], [3, 4]])
+            >>> tf_tensor = a.to_tensorflow()
+            
+        Note:
+            - TensorFlow creates tensors from NumPy arrays efficiently
+            - The conversion leverages TensorFlow's buffer protocol support
+            - For large arrays, TensorFlow handles memory management internally
+        """
+        try:
+            import tensorflow as tf
+        except ImportError:
+            raise ImportError(
+                "TensorFlow is not installed. Install it with: pip install tensorflow"
+            )
+        
+        # For lazy arrays, we need to compute first
+        if self._is_lazy:
+            # Compute to a temporary file
+            materialized = self.compute()
+            return materialized.to_tensorflow()
+        
+        # TensorFlow can create tensors from NumPy arrays efficiently
+        # tf.convert_to_tensor handles memory-mapped arrays well
+        # It will use the buffer protocol when possible
+        tensor = tf.convert_to_tensor(self._matrix.data)
+        return tensor
+    
     def compute(self, output_path: Optional[str] = None, cache_size_tiles: Optional[int] = None):
         """
         Execute the lazy computation plan and return a materialized ndarray.
