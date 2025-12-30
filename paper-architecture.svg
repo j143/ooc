@@ -1,204 +1,140 @@
 <svg width="1000" height="1600" viewBox="0 0 1000 1600" xmlns="http://www.w3.org/2000/svg">
-    <!-- 
-      Diagram for the 'paper' Out-of-Core Framework (Updated Dec 2025)
-      Now includes: Three-Stage Optimizer & Observability Layer
-      Designed for clarity and maintainability.
-    -->
     <defs>
         <style>
-            /* Global Font and Color Scheme */
-            .title-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #2c3e50; }
-            .subtitle-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-style: italic; fill: #7f8c8d; }
-            .layer-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 20px; font-weight: 600; fill: #34495e; }
-            .component-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #2980b9; }
-            .label-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; fill: #34495e; }
-            .code-text { font-family: 'Courier New', monospace; font-size: 14px; fill: #2980b9; }
-            .arrow-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; fill: #2c3e50; }
-            .data-arrow-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; fill: #27ae60; font-weight: bold; }
-            .stage-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; fill: #e74c3c; font-weight: bold; }
+            /* Typography */
+            .text-title { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 28px; font-weight: 800; fill: #1a202c; }
+            .text-subtitle { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 16px; fill: #718096; font-weight: 400; }
+            .text-layer { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #2d3748; }
+            .text-comp { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #3182ce; }
+            .text-body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 14px; fill: #4a5568; }
+            .text-code { font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size: 13px; fill: #805ad5; font-weight: 500; }
+            .text-arrow { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 12px; font-weight: 600; fill: #4a5568; }
+            .text-data { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 13px; fill: #38a169; font-weight: 700; }
+            .text-stage-num { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 18px; fill: #e53e3e; font-weight: 800; }
 
-            /* Component Box Styles */
-            .layer-box { fill: #f8f9fa; stroke: #495057; stroke-width: 2; rx: 12; }
-            .component-box { fill: #ffffff; stroke: #adb5bd; stroke-width: 1.5; rx: 6; }
-            .sub-component-box { fill: #f1f3f5; stroke: #ced4da; stroke-width: 1; rx: 4;}
-            .obs-box { fill: #fff3cd; stroke: #f39c12; stroke-width: 2; rx: 6; stroke-dasharray: 4 2; }
-
-            /* Arrow Styles */
-            .arrow-line { stroke: #34495e; stroke-width: 2; marker-end: url(#arrowhead); }
-            .data-arrow-line { stroke: #27ae60; stroke-width: 2.5; marker-end: url(#data-arrowhead); stroke-dasharray: 8 4; }
+            /* Geometry Styles */
+            .box-layer { fill: #f7fafc; stroke: #e2e8f0; stroke-width: 2; rx: 16; }
+            .box-comp { fill: #ffffff; stroke: #bee3f8; stroke-width: 1.5; rx: 8; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }
+            .box-sub { fill: #edf2f7; stroke: #cbd5e0; stroke-width: 1; rx: 6; }
+            .box-obs { fill: #fffaf0; stroke: #f6ad55; stroke-width: 2; rx: 8; stroke-dasharray: 6 3; }
+            
+            /* Connectors */
+            .line-std { stroke: #a0aec0; stroke-width: 2; marker-end: url(#arrow-std); fill: none; }
+            .line-data { stroke: #38a169; stroke-width: 2.5; marker-end: url(#arrow-data); stroke-dasharray: 8 4; fill: none; }
         </style>
-        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#34495e" />
+
+        <marker id="arrow-std" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#a0aec0" />
         </marker>
-        <marker id="data-arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" />
+        <marker id="arrow-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#38a169" />
         </marker>
     </defs>
 
-    <!-- Title -->
-    <text x="500" y="40" text-anchor="middle" class="title-text">'paper' Framework Architecture</text>
-    <text x="500" y="65" text-anchor="middle" class="subtitle-text">Out-of-Core System with Three-Stage Optimizer &amp; Observability</text>
+    <text x="500" y="50" text-anchor="middle" class="text-title">'paper' Framework Architecture</text>
+    <text x="500" y="80" text-anchor="middle" class="text-subtitle">High-Performance Out-of-Core Execution Engine</text>
 
-    <!-- Layer 1: User Application -->
-    <g id="user-layer">
-        <rect x="100" y="100" width="800" height="100" class="layer-box" />
-        <text x="500" y="130" text-anchor="middle" class="layer-title">1. User Application</text>
-        <text x="500" y="165" text-anchor="middle" class="code-text">plan = (plan_A @ plan_B) * 2</text>
-        <text x="500" y="185" text-anchor="middle" class="code-text">result, buffer_mgr = plan.compute(output_path)</text>
+    <g id="layer-1">
+        <rect x="100" y="120" width="800" height="110" class="box-layer" />
+        <text x="130" y="155" class="text-layer">1. User Application Interface</text>
+        <rect x="450" y="140" width="420" height="70" class="box-comp" />
+        <text x="470" y="165" class="text-code">plan = (matrix_a @ matrix_b) + 10</text>
+        <text x="470" y="190" class="text-code">result = plan.compute(cache_mode='optimal')</text>
     </g>
 
-    <line x1="500" y1="200" x2="500" y2="240" class="arrow-line" />
-    <text x="510" y="225" class="arrow-text">User builds a Plan</text>
+    <path d="M 500 230 L 500 270" class="line-std" />
+    <text x="515" y="255" class="text-arrow">Initialize Plan Graph</text>
 
-    <!-- Layer 2: Plan Layer -->
-    <g id="plan-layer">
-        <rect x="100" y="240" width="800" height="120" class="layer-box" />
-        <text x="500" y="270" text-anchor="middle" class="layer-title">2. Plan Layer (plan.py)</text>
-        <rect x="250" y="290" width="500" height="60" class="component-box"/>
-        <text x="500" y="315" text-anchor="middle" class="label-text">Builds a Computation Graph (AST) of PlanNodes</text>
-        <text x="500" y="335" text-anchor="middle" class="code-text">Plan(op_node=MultiplyScalarNode(...))</text>
+    <g id="layer-2">
+        <rect x="100" y="270" width="800" height="130" class="box-layer" />
+        <text x="130" y="305" class="text-layer">2. Plan Layer (AST Generation)</text>
+        <rect x="130" y="325" width="740" height="55" class="box-comp" />
+        <text x="500" y="358" text-anchor="middle" class="text-body">Constructs Directed Acyclic Graph (DAG) of **PlanNodes**</text>
     </g>
 
-    <line x1="500" y1="360" x2="500" y2="400" class="arrow-line" />
-    <text x="510" y="385" class="arrow-text">.compute() triggers optimizer</text>
+    <path d="M 500 400 L 500 440" class="line-std" />
+    <text x="515" y="425" class="text-arrow">Trigger Three-Stage Optimization</text>
 
-    <!-- Layer 3: Three-Stage Optimizer -->
-    <g id="optimizer-layer">
-        <rect x="100" y="400" width="800" height="340" class="layer-box" />
-        <text x="500" y="430" text-anchor="middle" class="layer-title">3. Three-Stage Optimizer (optimizer.py)</text>
+    <g id="layer-3">
+        <rect x="100" y="440" width="800" height="360" class="box-layer" />
+        <text x="130" y="475" class="text-layer">3. Three-Stage Optimizer</text>
         
-        <!-- Stage 1: Analyze -->
-        <rect x="150" y="450" width="250" height="140" class="component-box"/>
-        <text x="275" y="475" text-anchor="middle" class="component-title">STAGE 1: analyze()</text>
-        <text x="70" y="475" class="stage-text">①</text>
-        <text x="275" y="500" text-anchor="middle" class="label-text" style="font-size:13px;">• Generate I/O Trace</text>
-        <text x="275" y="520" text-anchor="middle" class="label-text" style="font-size:13px;">• Detect Fusion Patterns</text>
-        <text x="275" y="540" text-anchor="middle" class="label-text" style="font-size:13px;">• Metadata-only (no exec)</text>
-        <text x="275" y="565" text-anchor="middle" class="code-text" style="font-size:12px;">→ (io_trace, MatchResult)</text>
+        <rect x="130" y="500" width="230" height="150" class="box-comp"/>
+        <text x="150" y="530" class="text-stage-num">①</text>
+        <text x="180" y="530" class="text-comp">Analyze</text>
+        <text x="150" y="560" class="text-body">• Generate I/O Trace</text>
+        <text x="150" y="585" class="text-body">• Metadata Analysis</text>
+        <text x="150" y="625" class="text-code">→ MatchResult</text>
         
-        <!-- Stage 2: Rewrite -->
-        <rect x="440" y="450" width="250" height="140" class="component-box"/>
-        <text x="565" y="475" text-anchor="middle" class="component-title">STAGE 2: rewrite()</text>
-        <text x="720" y="475" class="stage-text">②</text>
-        <text x="565" y="500" text-anchor="middle" class="label-text" style="font-size:13px;">• Transform Plan</text>
-        <text x="565" y="520" text-anchor="middle" class="label-text" style="font-size:13px;">• Apply Fusion Rules</text>
-        <text x="565" y="540" text-anchor="middle" class="label-text" style="font-size:13px;">• Optimize IR</text>
-        <text x="565" y="565" text-anchor="middle" class="code-text" style="font-size:12px;">→ Optimized Plan</text>
-        
-        <!-- Stage 3: Execute -->
-        <rect x="150" y="610" width="540" height="110" class="component-box"/>
-        <text x="420" y="635" text-anchor="middle" class="component-title">STAGE 3: execute_plan()</text>
-        <text x="70" y="635" class="stage-text">③</text>
-        <text x="420" y="660" text-anchor="middle" class="label-text" style="font-size:13px;">• Select fused/unfused kernels based on MatchResult</text>
-        <text x="420" y="680" text-anchor="middle" class="label-text" style="font-size:13px;">• Execute with BufferManager</text>
-        <text x="420" y="705" text-anchor="middle" class="code-text" style="font-size:12px;">→ Calls Backend Kernels</text>
-        
-        <!-- Cost Estimation Box -->
-        <rect x="730" y="610" width="150" height="110" class="obs-box"/>
-        <text x="805" y="635" text-anchor="middle" class="component-title" style="font-size:14px;">Cost Model</text>
-        <text x="805" y="655" text-anchor="middle" class="label-text" style="font-size:12px;">estimate_cost()</text>
-        <text x="805" y="675" text-anchor="middle" class="label-text" style="font-size:11px;">• I/O ops</text>
-        <text x="805" y="690" text-anchor="middle" class="label-text" style="font-size:11px;">• Compute ops</text>
-        <text x="805" y="705" text-anchor="middle" class="label-text" style="font-size:11px;">• Cache benefit</text>
+        <rect x="385" y="500" width="230" height="150" class="box-comp"/>
+        <text x="405" y="530" class="text-stage-num">②</text>
+        <text x="435" y="530" class="text-comp">Rewrite</text>
+        <text x="405" y="560" class="text-body">• Operator Fusion</text>
+        <text x="405" y="585" class="text-body">• IR Transformation</text>
+        <text x="405" y="625" class="text-code">→ OptimizedPlan</text>
+
+        <rect x="640" y="500" width="230" height="150" class="box-comp"/>
+        <text x="660" y="530" class="text-stage-num">③</text>
+        <text x="690" y="530" class="text-comp">Execute</text>
+        <text x="660" y="560" class="text-body">• Kernel Selection</text>
+        <text x="660" y="585" class="text-body">• Thread Scheduling</text>
+        <text x="660" y="625" class="text-code">→ Kernel Dispatch</text>
+
+        <rect x="130" y="670" width="740" height="110" class="box-obs"/>
+        <text x="150" y="705" class="text-comp">Heuristic Cost Model</text>
+        <text x="150" y="735" class="text-body">Estimates execution cost based on: **Compute GFLOPS** | **I/O Bandwidth** | **Memory Pressure**</text>
     </g>
-    
-    <!-- Arrow: Stage 1 → Stage 2 -->
-    <path d="M 400 520 L 440 520" class="arrow-line" />
-    
-    <!-- Arrow: Stage 2 → Stage 3 -->
-    <path d="M 565 590 L 565 610" class="arrow-line" />
-    
-    <!-- Optimizer to Buffer Manager Data Flow (I/O Trace) -->
-    <path d="M 275 590 C 200 650, 200 770, 295 830" stroke-width="2.5" stroke="#27ae60" fill="none" class="data-arrow-line" />
-    <text x="180" y="710" class="data-arrow-text">I/O Trace</text>
 
-    <line x1="500" y1="740" x2="500" y2="780" class="arrow-line" />
-    <text x="510" y="765" class="arrow-text">Calls Backend Kernels</text>
+    <path d="M 500 800 L 500 840" class="line-std" />
 
-    <!-- Layer 4: Execution & Memory Layer -->
-    <g id="execution-memory-layer">
-        <rect x="100" y="780" width="800" height="380" class="layer-box" />
-        <text x="500" y="810" text-anchor="middle" class="layer-title">4. Execution &amp; Memory Layer</text>
+    <g id="layer-4">
+        <rect x="100" y="840" width="800" height="380" class="box-layer" />
+        <text x="130" y="875" class="text-layer">4. Execution &amp; Memory Layer</text>
 
-        <!-- Buffer Manager Box -->
-        <rect x="120" y="830" width="350" height="290" class="component-box"/>
-        <text x="295" y="855" text-anchor="middle" class="component-title">BufferManager (buffer.py)</text>
-        <rect x="140" y="875" width="310" height="110" class="sub-component-box"/>
-        <text x="295" y="900" text-anchor="middle" class="label-text" style="font-weight:bold;">In-Memory Cache (RAM)</text>
-        <text x="295" y="930" text-anchor="middle" class="code-text">[Tile A, Tile B, ...]</text>
-        <text x="295" y="955" text-anchor="middle" class="label-text">Size: N tiles</text>
+        <rect x="130" y="900" width="350" height="300" class="box-comp"/>
+        <text x="150" y="930" class="text-comp">Buffer Manager</text>
+        <rect x="150" y="945" width="310" height="100" class="box-sub"/>
+        <text x="170" y="975" class="text-body" style="font-weight:700">Tile Cache (LRU/Optimal)</text>
+        <text x="170" y="1005" class="text-code">[Tile_01] [Tile_02] ...</text>
         
-        <rect x="140" y="1000" width="310" height="100" class="sub-component-box"/>
-        <text x="295" y="1020" text-anchor="middle" class="label-text" style="font-weight:bold;">Eviction Policy</text>
-        <text x="295" y="1050" text-anchor="middle" class="code-text">if io_trace: _evict_optimal()</text>
-        <text x="295" y="1075" text-anchor="middle" class="code-text">else: _evict_lru()</text>
+        <rect x="150" y="1065" width="310" height="110" class="box-sub"/>
+        <text x="170" y="1095" class="text-body" style="font-weight:700">Eviction Logic</text>
+        <text x="170" y="1125" class="text-code">_evict_optimal(io_trace)</text>
 
-        <!-- Backend Kernels Box -->
-        <rect x="530" y="830" width="350" height="290" class="component-box"/>
-        <text x="705" y="855" text-anchor="middle" class="component-title">Backend Kernels (backend.py)</text>
-        <text x="705" y="890" text-anchor="middle" class="label-text">- Parallel Tile Processing</text>
-        <text x="705" y="915" text-anchor="middle" class="label-text">- Fused &amp; Standard Kernels</text>
-        <text x="705" y="940" text-anchor="middle" class="code-text">add(), multiply(), ...</text>
-        <text x="705" y="975" text-anchor="middle" class="code-text">execute_fused_add_multiply()</text>
-        <text x="705" y="1030" text-anchor="middle" class="label-text" style="font-weight:bold;">Interactions</text>
-        <text x="705" y="1055" text-anchor="middle" class="label-text">1. Requests tiles from BufferManager</text>
-        <text x="705" y="1080" text-anchor="middle" class="label-text">2. Writes results to Core Layer</text>
+        <rect x="520" y="900" width="350" height="300" class="box-comp"/>
+        <text x="540" y="930" class="text-comp">Backend Kernels</text>
+        <text x="540" y="965" class="text-body">• Parallel Tile Processing</text>
+        <text x="540" y="990" class="text-body">• Vectorized Operations (NumPy/C++)</text>
+        <text x="540" y="1030" class="text-code">Fused: add_mul_kernel()</text>
+        <text x="540" y="1055" class="text-code">Atomic: matmul_kernel()</text>
     </g>
     
-    <!-- Backend <> BufferManager Interaction Arrows -->
-    <path d="M 470 1025 L 530 1025" class="arrow-line" transform="rotate(180 500 1025)" />
-    <path d="M 470 1025 L 530 1025" class="arrow-line" transform="translate(40,0)" />
-    <text x="445" y="1015" class="arrow-text">get_tile()</text>
+    <path d="M 245 650 Q 50 750 130 950" class="line-data" />
+    <text x="60" y="780" class="text-data">I/O Trace Injection</text>
 
-    <!-- Arrow to Core Layer -->
-    <line x1="500" y1="1160" x2="500" y2="1200" class="arrow-line" />
-    <text x="310" y="1185" class="arrow-text">On Miss: Read Tile</text>
-    <text x="600" y="1185" class="arrow-text">Write Result</text>
+    <g id="layer-5">
+        <rect x="100" y="1240" width="800" height="280" class="box-layer" />
+        <text x="130" y="1275" class="text-layer">5. Core I/O Layer (PaperMatrix)</text>
+        
+        <rect x="130" y="1300" width="350" height="180" class="box-sub"/>
+        <text x="305" y="1335" text-anchor="middle" class="text-comp">Read Path</text>
+        <text x="305" y="1370" text-anchor="middle" class="text-code">numpy.memmap()</text>
+        <text x="305" y="1410" text-anchor="middle" class="text-body">OS-level virtual memory mapping</text>
+        <text x="305" y="1435" text-anchor="middle" class="text-body">for random access performance.</text>
 
-    <!-- Layer 5: Core Layer -->
-    <g id="core-layer">
-        <rect x="100" y="1200" width="800" height="350" class="layer-box" />
-        <text x="500" y="1230" text-anchor="middle" class="layer-title">5. Core I/O Layer (core.py)</text>
-
-        <rect x="150" y="1260" width="700" height="250" class="component-box"/>
-        <text x="500" y="1290" text-anchor="middle" class="component-title">PaperMatrix</text>
-        <text x="500" y="1320" text-anchor="middle" class="label-text">Abstracts direct disk interaction.</text>
-        
-        <rect x="180" y="1350" width="300" height="130" class="sub-component-box"/>
-        <text x="330" y="1375" text-anchor="middle" class="label-text" style="font-weight:bold;">Read Path</text>
-        <text x="330" y="1405" text-anchor="middle" class="code-text">numpy.memmap</text>
-        <text x="330" y="1430" text-anchor="middle" class="label-text">Efficient tile reads</text>
-        <text x="330" y="1450" text-anchor="middle" class="label-text">via OS virtual memory.</text>
-        
-        <rect x="520" y="1350" width="300" height="130" class="sub-component-box"/>
-        <text x="670" y="1375" text-anchor="middle" class="label-text" style="font-weight:bold;">Write Path</text>
-        <text x="670" y="1405" text-anchor="middle" class="code-text">open() / seek() / write()</text>
-        <text x="670" y="1430" text-anchor="middle" class="label-text">True out-of-core writing</text>
-        <text x="670" y="1450" text-anchor="middle" class="label-text">with minimal memory.</text>
-        
-        <line x1="330" y1="1480" x2="330" y2="1520" style="stroke:#adb5bd; stroke-width:1.5;"/>
-        <line x1="670" y1="1480" x2="670" y2="1520" style="stroke:#adb5bd; stroke-width:1.5;"/>
-        <line x1="330" y1="1520" x2="670" y2="1520" style="stroke:#adb5bd; stroke-width:1.5;"/>
-        <text x="500" y="1545" text-anchor="middle" class="label-text" style="font-weight:bold;">Physical Disk Storage (SSD / HDD)</text>
+        <rect x="520" y="1300" width="350" height="180" class="box-sub"/>
+        <text x="695" y="1335" text-anchor="middle" class="text-comp">Write Path</text>
+        <text x="695" y="1370" text-anchor="middle" class="text-code">File.seek() &amp; .write()</text>
+        <text x="695" y="1410" text-anchor="middle" class="text-body">Direct-to-disk tiled streaming</text>
+        <text x="695" y="1435" text-anchor="middle" class="text-body">ensuring memory footprint stability.</text>
     </g>
 
-    <!-- Cross-Cutting: Observability Layer -->
-    <g id="observability-layer">
-        <rect x="20" y="100" width="70" height="1450" class="obs-box" opacity="0.3"/>
-        <text x="55" y="800" text-anchor="middle" class="component-title" transform="rotate(-90 55 800)" style="font-size:18px;">Observability (observability.py)</text>
+    <g id="observability">
+        <rect x="890" y="120" width="100" height="1400" class="box-obs" opacity="0.4" />
+        <text x="960" y="820" text-anchor="middle" class="text-comp" transform="rotate(-90 960 820)" style="fill:#d97706">Observability &amp; Telemetry</text>
         
-        <!-- Observability Components -->
-        <rect x="720" y="100" width="260" height="170" class="obs-box"/>
-        <text x="850" y="125" text-anchor="middle" class="component-title">Cross-Cutting Concerns</text>
-        
-        <text x="850" y="155" text-anchor="middle" class="label-text" style="font-size:13px;">📊 Structured Logging</text>
-        <text x="850" y="175" text-anchor="middle" class="code-text" style="font-size:11px;">configure_logging()</text>
-        
-        <text x="850" y="200" text-anchor="middle" class="label-text" style="font-size:13px;">⏱️ Performance Profiling</text>
-        <text x="850" y="220" text-anchor="middle" class="code-text" style="font-size:11px;">ExecutionProfiler</text>
-        
-        <text x="850" y="245" text-anchor="middle" class="label-text" style="font-size:13px;">🔍 Execution Tracing</text>
-        <text x="850" y="265" text-anchor="middle" class="code-text" style="font-size:11px;">TraceLogger</text>
+        <rect x="680" y="20" width="310" height="85" class="box-obs" />
+        <text x="695" y="50" class="text-comp" style="fill:#d97706">Monitoring</text>
+        <text x="695" y="75" class="text-body">Logs | Performance Traces | Resource Usage</text>
     </g>
-
 </svg>
