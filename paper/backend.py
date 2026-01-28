@@ -70,6 +70,48 @@ def add(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: Buffer
     
     return PaperMatrix(output_path, A.shape, mode='r')
 
+def subtract(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
+    """
+    Performs out-of-core matrix subtraction: C = A - B using the provided buffer manager.
+    """
+    if A.shape != B.shape:
+        raise ValueError("Matrices must have the same shape for subtraction.")
+    
+    _create_empty_file(output_path, A.shape, A.dtype)
+    
+    # loop now uses the buffer manager for all data reads
+    rows, cols = A.shape
+    trace_pos = 0  # Track trace position for stateless buffer manager
+    
+    # Iterate through the matrices tile by tile
+    with open(output_path, "r+b") as f_out:
+        for r_start in range(0, rows, TILE_SIZE):
+            r_end = min(r_start + TILE_SIZE, rows)
+            for c_start in range(0, cols, TILE_SIZE):
+                c_end = min(c_start + TILE_SIZE, cols)
+                
+                # 1. Read tiles from A and B into memory
+                if buffer_manager:
+                    print(" - Backend: Executing buffered 'subtract' kernel" )
+                    tile_A = buffer_manager.get_tile(A, r_start, c_start, trace_pos)
+                    trace_pos += 1  # Increment for next A tile access
+                    tile_B = buffer_manager.get_tile(B, r_start, c_start, trace_pos)
+                    trace_pos += 1  # Increment for next B tile access
+                else:
+                    tile_A = A.data[r_start:r_end, c_start:c_end]
+                    tile_B = B.data[r_start:r_end, c_start:c_end]
+                
+                # 2. Compute the result in memory
+                result_tile = (tile_A - tile_B).astype(A.dtype)
+
+                # Write the tile row by row to handle non-contiguous writes
+                for i in range(result_tile.shape[0]):
+                    row_offset = ((r_start + i) * A.shape[1] + c_start) * A.dtype.itemsize
+                    f_out.seek(row_offset)
+                    f_out.write(result_tile[i, :].tobytes())
+    
+    return PaperMatrix(output_path, A.shape, mode='r')
+
 def multiply(A: PaperMatrix, B: PaperMatrix, output_path: str, buffer_manager: BufferManager | None) -> PaperMatrix:
     """Performs out-of-core tiled matrix multiplication: C = A @ B."""
     if A.shape[1] != B.shape[0]:
