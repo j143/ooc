@@ -90,7 +90,7 @@ key: Paper is **transparent** to your application. It replaces I/O, not your bus
 
 #### Paper architecture
 
-![Framework architecture](/paper-architecture.svg "Architecture")
+![Framework architecture](assets/paper-architecture.svg "Architecture")
 
 ### Three committments to guide design
 
@@ -146,7 +146,7 @@ python ./tests/run_tests.py scalar
 ### Buffer Manager architecture
 
 
-![Buffer manager architecture](/buffer-manager-architecture.svg "Buffer Manager")
+![Buffer manager architecture](assets/buffer-manager-architecture.svg "Buffer Manager")
 
 
 ### Benchmarks
@@ -259,7 +259,7 @@ See [data_prep/README.md](data_prep/README.md) for detailed documentation.
 
 ### Results
 
-![eviction stress](/cache_visualization_eviction_stress_32.png "Buffer Manager")
+![eviction stress](assets/cache_visualization_eviction_stress_32.png "Buffer Manager")
 
-![large analysis](/cache_visualization_large_analysis_new.png "Buffer Manager")
+![large analysis](assets/cache_visualization_large_analysis_new.png "Buffer Manager")
 
