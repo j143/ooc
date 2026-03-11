@@ -36,6 +36,7 @@ print(result.to_numpy())
 - **Automatic Optimization**: Operator fusion and intelligent caching applied automatically
 - **Out-of-Core Support**: Handle datasets larger than memory seamlessly
 - **Matrix Operations**: Support for addition, scalar multiplication, and matrix multiplication (@)
+- **Device Tensor Conversion**: Direct conversion to PyTorch and TensorFlow tensors with efficient memory handling
 
 ### Supported Operations
 
@@ -56,6 +57,51 @@ print(result.to_numpy())
 - `pnp.load(filepath, shape)` - Load array from file
 - `pnp.save(filepath, array)` - Save array to file
 
+**Tensor Conversion:**
+- `array.to_torch(device)` - Convert to PyTorch tensor (CPU or GPU)
+- `array.to_tensorflow()` - Convert to TensorFlow tensor
+
+### Device Tensor Conversion
+
+Paper supports efficient conversion of out-of-core arrays to PyTorch and TensorFlow tensors, enabling seamless integration with deep learning frameworks.
+
+#### Quick Example
+
+```python
+from paper import numpy_api as pnp
+import numpy as np
+
+# Load a large out-of-core array (memory-mapped)
+arr = pnp.load("large_matrix.dat", shape=(10000, 10000), dtype=np.float32)
+
+# Build lazy computation graph
+c = arr * 2
+
+# Execute computation
+result = c.compute()
+
+# Convert to PyTorch tensor (efficient, memory-mapped conversion)
+torch_tensor = result.to_torch()      # CPU tensor
+cuda_tensor = result.to_torch(device='cuda')  # GPU tensor (if available)
+
+# Convert to TensorFlow tensor
+tf_tensor = result.to_tensorflow()
+```
+
+#### Key Benefits
+
+- **Memory Efficiency**: Leverages memory-mapped files for minimal RAM usage
+- **Zero-Copy Conversion**: Direct memory sharing where possible (writable arrays)
+- **GPU Support**: Easy transfer to CUDA devices with PyTorch
+- **Lazy Evaluation**: Only computes when needed, then converts efficiently
+- **Framework Agnostic**: Works with both PyTorch and TensorFlow
+
+#### Running the Demo
+
+```bash
+python examples/tensor_conversion_demo.py
+```
+
 ### Examples
 
 See `examples/numpy_api_example.py` for comprehensive examples demonstrating:
@@ -65,9 +111,16 @@ See `examples/numpy_api_example.py` for comprehensive examples demonstrating:
 - File I/O
 - Large array handling (out-of-core)
 
+See `examples/tensor_conversion_demo.py` for tensor conversion examples:
+- Basic tensor conversion (PyTorch and TensorFlow)
+- Lazy computation with tensor conversion
+- Complete out-of-core workflow
+- GPU conversion (when available)
+
 Run the examples:
 ```bash
 python examples/numpy_api_example.py
+python examples/tensor_conversion_demo.py
 ```
 
 ### Architecture
