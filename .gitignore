@@ -10,6 +10,9 @@ benchmark_data/
 visualize_data*
 dask_benchmark_data/
 real_data/
+ml_example_data/
+test_ml_data/
+demo_test/
 
 # Data files
 *.bin
